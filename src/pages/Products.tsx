@@ -44,7 +44,7 @@ export default function Products() {
         .from('products')
         .select(`
           *,
-          profiles (
+          profiles!inner (
             full_name,
             college
           )

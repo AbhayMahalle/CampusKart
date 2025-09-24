@@ -17,10 +17,10 @@ interface Product {
   category: string | null;
   created_at: string;
   user_id: string;
-  profiles: {
+  profiles?: {
     full_name: string;
     college: string;
-  };
+  } | null;
 }
 
 export default function Products() {
@@ -42,13 +42,7 @@ export default function Products() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select(`
-          *,
-          profiles!inner (
-            full_name,
-            college
-          )
-        `)
+        .select('*')
         .eq('is_available', true)
         .order('created_at', { ascending: false });
 
@@ -283,13 +277,8 @@ export default function Products() {
                   
                   <div className="space-y-2 mb-4">
                     <p className="text-sm text-muted-foreground">
-                      Sold by: {product.profiles?.full_name || 'Unknown'}
+                      Seller ID: {product.user_id.slice(0, 8)}...
                     </p>
-                    {product.profiles?.college && (
-                      <p className="text-sm text-muted-foreground">
-                        {product.profiles.college}
-                      </p>
-                    )}
                     <p className="text-xs text-muted-foreground">
                       Listed {new Date(product.created_at).toLocaleDateString()}
                     </p>

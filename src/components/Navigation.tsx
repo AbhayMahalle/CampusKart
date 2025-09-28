@@ -49,7 +49,9 @@ export function Navigation() {
     { path: '/add-product', icon: Plus, label: 'Add Product' },
     { path: '/wishlist', icon: Heart, label: 'Wishlist' },
     { path: '/flats', icon: Building2, label: 'Flats' },
+    { path: '/add-flat', icon: Plus, label: 'Add Flat' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
+    { path: '/profile', icon: User, label: 'Profile' },
   ];
 
   if (!user) return null;

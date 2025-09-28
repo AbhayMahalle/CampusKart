@@ -38,13 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      chats: {
+        Row: {
+          created_at: string
+          id: string
+          last_message: string | null
+          product_id: string | null
+          receiver_id: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message?: string | null
+          product_id?: string | null
+          receiver_id: string
+          sender_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message?: string | null
+          product_id?: string | null
+          receiver_id?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flat_listings: {
         Row: {
           available_from: string | null
           bathrooms: number | null
           bedrooms: number | null
+          contact_number: string | null
           created_at: string
           description: string | null
+          flat_type: string | null
           id: string
           image_url: string | null
           is_available: boolean | null
@@ -58,8 +90,10 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          contact_number?: string | null
           created_at?: string
           description?: string | null
+          flat_type?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -73,8 +107,10 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          contact_number?: string | null
           created_at?: string
           description?: string | null
+          flat_type?: string | null
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -88,33 +124,40 @@ export type Database = {
       }
       messages: {
         Row: {
+          chat_id: string | null
           created_at: string
           id: string
           message: string
           read: boolean | null
           receiver_id: string
           sender_id: string
+          timestamp: string | null
         }
         Insert: {
+          chat_id?: string | null
           created_at?: string
           id?: string
           message: string
           read?: boolean | null
           receiver_id: string
           sender_id: string
+          timestamp?: string | null
         }
         Update: {
+          chat_id?: string | null
           created_at?: string
           id?: string
           message?: string
           read?: boolean | null
           receiver_id?: string
           sender_id?: string
+          timestamp?: string | null
         }
         Relationships: []
       }
       products: {
         Row: {
+          approved: boolean | null
           category: string | null
           created_at: string
           description: string | null
@@ -123,10 +166,14 @@ export type Database = {
           is_available: boolean | null
           name: string
           price: number
+          seller_phone: string | null
+          sold: boolean | null
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          approved?: boolean | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -135,10 +182,14 @@ export type Database = {
           is_available?: boolean | null
           name: string
           price: number
+          seller_phone?: string | null
+          sold?: boolean | null
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          approved?: boolean | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -147,6 +198,9 @@ export type Database = {
           is_available?: boolean | null
           name?: string
           price?: number
+          seller_phone?: string | null
+          sold?: boolean | null
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -157,9 +211,11 @@ export type Database = {
           avatar_url: string | null
           college: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           phone: string | null
+          role: string | null
           updated_at: string
           user_id: string
         }
@@ -167,9 +223,11 @@ export type Database = {
           avatar_url?: string | null
           college?: string | null
           created_at?: string
+          email?: string | null
           full_name: string
           id?: string
           phone?: string | null
+          role?: string | null
           updated_at?: string
           user_id: string
         }
@@ -177,9 +235,11 @@ export type Database = {
           avatar_url?: string | null
           college?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           phone?: string | null
+          role?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -18,7 +18,7 @@ interface Chat {
   };
 }
 
-export default function ChatList() {
+export function ChatList() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
@@ -135,3 +135,5 @@ export default function ChatList() {
     </div>
   );
 }
+
+export default ChatList;

@@ -102,34 +102,42 @@ export function ChatList() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {chats.map((chat) => (
-            <Card key={chat.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">
-                      {chat.profiles?.full_name || 'Anonymous User'}
-                    </h3>
-                    {chat.last_message && (
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        {chat.last_message}
+          {chats.map((chat) => {
+            const otherUserId = chat.sender_id === user.id ? chat.receiver_id : chat.sender_id;
+            
+            return (
+              <Card 
+                key={chat.id} 
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => window.location.href = `/chat/${chat.id}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">
+                        {chat.profiles?.full_name || 'Anonymous User'}
+                      </h3>
+                      {chat.last_message && (
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {chat.last_message}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(chat.updated_at).toLocaleDateString()}
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(chat.updated_at).toLocaleDateString()}
-                    </p>
+                    </div>
+                    <Badge variant="secondary">
+                      <MessageCircle className="w-3 h-3 mr-1" />
+                      Chat
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    <MessageCircle className="w-3 h-3 mr-1" />
-                    Chat
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

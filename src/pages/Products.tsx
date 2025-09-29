@@ -15,6 +15,7 @@ interface Product {
   price: number;
   image_url: string | null;
   category: string | null;
+  seller_phone: string | null;
   created_at: string;
   user_id: string;
   profiles?: {
@@ -43,6 +44,7 @@ export default function Products() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('approved', true)
         .eq('is_available', true)
         .order('created_at', { ascending: false });
 
@@ -293,14 +295,38 @@ export default function Products() {
                     >
                       <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
                     </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      disabled={product.user_id === user?.id}
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      {product.user_id === user?.id ? 'Your Item' : 'Message'}
-                    </Button>
+                    {product.user_id === user?.id ? (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        disabled
+                      >
+                        Your Item
+                      </Button>
+                    ) : product.seller_phone ? (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          const message = `Hi, I'm interested in your item '${product.name}' on CampusKart.`;
+                          window.open(`https://wa.me/${product.seller_phone}?text=${encodeURIComponent(message)}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        WhatsApp
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          window.location.href = `/chat?receiver=${product.user_id}&product=${product.id}`;
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        Chat
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

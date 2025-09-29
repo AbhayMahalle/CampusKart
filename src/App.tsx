@@ -9,9 +9,12 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import AddProduct from "./pages/AddProduct";
+import AddFlat from "./pages/AddFlat";
+import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
 import FlatListings from "./pages/FlatListings";
 import Chat from "./pages/Chat";
+import ChatWindow from "./pages/ChatWindow";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -121,9 +124,24 @@ function AppRoutes() {
           <FlatListings />
         </ProtectedRoute>
       } />
+      <Route path="/add-flat" element={
+        <ProtectedRoute>
+          <AddFlat />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
       <Route path="/chat" element={
         <ProtectedRoute>
           <Chat />
+        </ProtectedRoute>
+      } />
+      <Route path="/chat/:chatId" element={
+        <ProtectedRoute>
+          <ChatWindow />
         </ProtectedRoute>
       } />
 

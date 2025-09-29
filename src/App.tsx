@@ -8,6 +8,7 @@ import { Navigation } from "@/components/Navigation";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
 import AddProduct from "./pages/AddProduct";
 import AddFlat from "./pages/AddFlat";
 import Profile from "./pages/Profile";
@@ -107,6 +108,11 @@ function AppRoutes() {
       <Route path="/products" element={
         <ProtectedRoute>
           <Products />
+        </ProtectedRoute>
+      } />
+      <Route path="/products/:productId" element={
+        <ProtectedRoute>
+          <ProductDetail />
         </ProtectedRoute>
       } />
       <Route path="/add-product" element={

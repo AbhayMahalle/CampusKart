@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ interface Product {
 }
 
 export default function Products() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -236,7 +237,11 @@ export default function Products() {
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="group hover:shadow-card-hover transition-all duration-300 overflow-hidden">
+              <Card 
+                key={product.id} 
+                className="group hover:shadow-card-hover transition-all duration-300 overflow-hidden cursor-pointer"
+                onClick={() => navigate(`/products/${product.id}`)}
+              >
                 <CardHeader className="pb-2">
                   <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden relative">
                     {product.image_url ? (

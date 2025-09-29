@@ -34,19 +34,32 @@ export default function ChatList() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const { data: chatsData, error } = await supabase
         .from('chats')
-        .select(`
-          *,
-          profiles (
-            full_name
-          )
-        `)
+        .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setChats(data || []);
+
+      // Fetch profiles for each chat participant
+      const chatsWithProfiles = await Promise.all(
+        (chatsData || []).map(async (chat) => {
+          const otherUserId = chat.sender_id === user.id ? chat.receiver_id : chat.sender_id;
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('user_id', otherUserId)
+            .single();
+          
+          return {
+            ...chat,
+            profiles: profile || { full_name: 'Unknown User' }
+          };
+        })
+      );
+
+      setChats(chatsWithProfiles);
     } catch (error) {
       console.error('Error fetching chats:', error);
       toast({

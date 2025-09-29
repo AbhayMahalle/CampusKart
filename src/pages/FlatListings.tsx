@@ -69,13 +69,7 @@ export default function FlatListings() {
     try {
       let query = supabase
         .from('flat_listings')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .eq('is_available', true);
 
       // Apply sorting
@@ -94,10 +88,27 @@ export default function FlatListings() {
           break;
       }
 
-      const { data, error } = await query;
+      const { data: flatsData, error } = await query;
 
       if (error) throw error;
-      setFlats(data || []);
+
+      // Fetch profiles for each flat owner
+      const flatsWithProfiles = await Promise.all(
+        (flatsData || []).map(async (flat) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, phone')
+            .eq('user_id', flat.user_id)
+            .single();
+          
+          return {
+            ...flat,
+            profiles: profile || { full_name: 'Unknown User', phone: null }
+          };
+        })
+      );
+
+      setFlats(flatsWithProfiles);
     } catch (error) {
       console.error('Error fetching flats:', error);
       toast({

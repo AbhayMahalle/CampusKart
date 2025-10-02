@@ -1,8 +1,83 @@
-# Welcome to your Lovable project
+# 🎓 CampusKart - Campus Marketplace Platform
+
+A full-featured marketplace platform designed for college students to buy, sell, trade items, and find flatmates.
+
+---
+
+## ✨ Features
+
+### 🛍️ Product Marketplace
+- Browse and search products by category
+- Product detail pages with seller information  
+- Smart contact options (WhatsApp + In-app chat)
+- Wishlist functionality
+- Image uploads for product listings
+- Price filtering and sorting
+
+### 🏠 Flat Listings
+- List available flats/rooms
+- Filter by flat type (1BHK, 2BHK, PG, etc.)
+- Sort by rent price or date
+- Contact owners via WhatsApp or chat
+- Detailed property information (bedrooms, bathrooms, location)
+
+### 💬 Messaging System
+- Real-time in-app messaging
+- Chat history with all conversations
+- WhatsApp integration for quick contact
+- Message notifications
+
+### 👤 User Profiles
+- Customizable user profiles
+- Avatar uploads
+- College/university information
+- Phone number for WhatsApp integration
+
+### 🔐 Authentication & Security
+- Secure email/password authentication
+- Row-level security (RLS) policies
+- Protected routes and user-specific data
+- Admin dashboard for content moderation
+
+### ⚡ Admin Features
+- Product approval system
+- User management
+- Platform statistics dashboard
+- Moderation tools
+
+---
+
+## 🚀 Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: Shadcn/ui + Radix UI
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Real-time**: Supabase Realtime subscriptions
+- **Routing**: React Router v6
+- **State Management**: React Context API
+- **Form Handling**: React Hook Form + Zod validation
+
+---
+
+## 🎨 Design System
+
+CampusKart uses a vibrant, modern design system with:
+- Gradient primary colors (purple-blue theme)
+- Semantic color tokens for consistency
+- Fully responsive layouts
+- Smooth animations and transitions
+- Custom button variants (hero, accent, success, warning)
+- Card-based UI with elegant hover effects
+- Dark mode support
+
+---
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/1b3e8ce3-2768-473c-b192-099a31adef5f
+
+---
 
 ## How can I edit this code?
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Package, Trash2 } from 'lucide-react';
+import { Heart, Package, Trash2, IndianRupee } from 'lucide-react';
 
 interface WishlistItem {
   id: string;
@@ -160,7 +160,10 @@ export default function Wishlist() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-2xl font-bold text-primary">${item.products.price}</p>
+                  <div className="flex items-center text-2xl font-bold text-primary">
+                    <IndianRupee className="w-5 h-5" />
+                    {item.products.price.toLocaleString()}
+                  </div>
                   {!item.products.is_available && (
                     <span className="px-2 py-1 bg-destructive text-destructive-foreground text-xs rounded-md">
                       Sold Out

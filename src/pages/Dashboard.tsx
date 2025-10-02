@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ShoppingBag, Heart, Building2, MessageCircle, TrendingUp, Package, Users } from 'lucide-react';
+import { Plus, ShoppingBag, Heart, Building2, MessageCircle, TrendingUp, Package, Users, IndianRupee, ArrowRight } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [userProducts, setUserProducts] = useState<Product[]>([]);
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalWishlist: 0,
@@ -39,6 +40,7 @@ export default function Dashboard() {
     if (user) {
       Promise.all([
         fetchUserProducts(),
+        fetchRecommendedProducts(),
         fetchDashboardStats(),
         fetchUserProfile()
       ]).finally(() => setLoading(false));
@@ -91,6 +93,28 @@ export default function Dashboard() {
       setUserProducts(data || []);
     } catch (error) {
       console.error('Error in fetchUserProducts:', error);
+    }
+  };
+
+  const fetchRecommendedProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, created_at')
+        .eq('approved', true)
+        .eq('is_available', true)
+        .neq('user_id', user?.id || '')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) {
+        console.error('Error fetching recommended products:', error);
+        return;
+      }
+
+      setRecommendedProducts(data || []);
+    } catch (error) {
+      console.error('Error in fetchRecommendedProducts:', error);
     }
   };
 
@@ -267,7 +291,10 @@ export default function Dashboard() {
                     <CardTitle className="text-sm line-clamp-1">{product.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-lg font-semibold text-primary">${product.price}</p>
+                    <div className="flex items-center text-lg font-semibold text-primary">
+                      <IndianRupee className="w-4 h-4" />
+                      {product.price.toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Listed {new Date(product.created_at).toLocaleDateString()}
                     </p>
@@ -278,6 +305,65 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Recommended Products */}
+      {recommendedProducts.length > 0 && (
+        <Card className="mt-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <ShoppingBag className="w-5 h-5 text-accent" />
+                  <span>Recommended for You</span>
+                </CardTitle>
+                <CardDescription>Products you might be interested in</CardDescription>
+              </div>
+              <Button asChild variant="outline">
+                <Link to="/products">
+                  View All
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="flex space-x-4 pb-4">
+                {recommendedProducts.map((product) => (
+                  <Link 
+                    key={product.id} 
+                    to={`/products/${product.id}`}
+                    className="flex-shrink-0 w-48"
+                  >
+                    <Card className="hover:shadow-card-hover transition-shadow h-full">
+                      <div className="aspect-square bg-muted rounded-t-lg overflow-hidden">
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-3">
+                        <CardTitle className="text-sm line-clamp-2 mb-2 h-10">{product.name}</CardTitle>
+                        <div className="flex items-center text-base font-semibold text-primary">
+                          <IndianRupee className="w-4 h-4" />
+                          {product.price.toLocaleString()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

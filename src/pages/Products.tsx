@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, MessageCircle, Search, Package, Plus, Filter } from 'lucide-react';
+import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -274,7 +274,10 @@ export default function Products() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-2xl font-bold text-primary">${product.price}</p>
+                    <div className="flex items-center text-2xl font-bold text-primary">
+                      <IndianRupee className="w-5 h-5" />
+                      {product.price.toLocaleString()}
+                    </div>
                     {product.category && (
                       <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md">
                         {product.category}

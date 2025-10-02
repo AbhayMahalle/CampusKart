@@ -14,7 +14,7 @@ import {
   Phone, 
   User, 
   Calendar,
-  DollarSign,
+  IndianRupee,
   Package,
   Tag,
   MapPin,
@@ -302,7 +302,7 @@ export default function ProductDetail() {
               </Badge>
             )}
             <div className="flex items-center text-3xl font-bold text-primary mb-4">
-              <DollarSign className="w-8 h-8" />
+              <IndianRupee className="w-8 h-8" />
               {product.price.toLocaleString()}
             </div>
           </div>

@@ -14,7 +14,7 @@ import {
   X, 
   Eye,
   TrendingUp,
-  DollarSign 
+  IndianRupee 
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -250,8 +250,8 @@ export default function AdminDashboard() {
                       </p>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
                         <span className="flex items-center">
-                          <DollarSign className="w-4 h-4 mr-1" />
-                          ${product.price}
+                          <IndianRupee className="w-4 h-4 mr-1" />
+                          {product.price.toLocaleString()}
                         </span>
                         {product.category && (
                           <Badge variant="secondary">{product.category}</Badge>

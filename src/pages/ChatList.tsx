@@ -84,55 +84,77 @@ export function ChatList() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center space-x-2 mb-8">
-        <MessageCircle className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold">Messages</h1>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center shadow-glow">
+            <MessageCircle className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Messages
+          </h1>
+        </div>
+        {chats.length > 0 && (
+          <Badge variant="secondary" className="text-sm">
+            {chats.length} {chats.length === 1 ? 'conversation' : 'conversations'}
+          </Badge>
+        )}
       </div>
 
       {chats.length === 0 ? (
-        <Card>
+        <Card className="border-2 border-dashed border-muted-foreground/20 shadow-none">
           <CardContent className="p-12 text-center">
-            <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
-            <p className="text-muted-foreground">
-              Start chatting with sellers by messaging them from product listings
+            <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-10 h-10 text-primary/40" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No conversations yet</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Start chatting with sellers by clicking the "Chat with Seller" button on any product listing
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {chats.map((chat) => {
             const otherUserId = chat.sender_id === user.id ? chat.receiver_id : chat.sender_id;
             
             return (
               <Card 
                 key={chat.id} 
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                className="cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all duration-200 border border-border/50 hover:border-primary/50"
                 onClick={() => window.location.href = `/chat/${chat.id}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-primary" />
+                    <div className="relative">
+                      <div className="w-14 h-14 bg-gradient-primary rounded-full flex items-center justify-center shadow-elegant">
+                        <User className="w-7 h-7 text-primary-foreground" />
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-card"></div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg mb-1">
                         {chat.profiles?.full_name || 'Anonymous User'}
                       </h3>
-                      {chat.last_message && (
+                      {chat.last_message ? (
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {chat.last_message}
                         </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No messages yet
+                        </p>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(chat.updated_at).toLocaleDateString()}
-                      </p>
                     </div>
-                    <Badge variant="secondary">
-                      <MessageCircle className="w-3 h-3 mr-1" />
-                      Chat
-                    </Badge>
+                    <div className="flex flex-col items-end space-y-2">
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(chat.updated_at).toLocaleDateString('en-IN', { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      <MessageCircle className="w-5 h-5 text-primary" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

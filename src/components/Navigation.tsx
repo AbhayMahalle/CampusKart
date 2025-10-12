@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -9,37 +9,16 @@ import {
   Heart, 
   Building2, 
   MessageCircle, 
-  LogOut, 
   User,
   Menu,
   X,
   Shield
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 export function Navigation() {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "See you next time!",
-      });
-      navigate('/');
-    } catch (error) {
-      toast({
-        title: "Error signing out",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -102,17 +81,6 @@ export function Navigation() {
             )}
           </div>
 
-          {/* User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span>{user.email}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </Button>
-          </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
@@ -160,22 +128,6 @@ export function Navigation() {
                   <span>Admin Panel</span>
                 </Link>
               )}
-              
-              <div className="pt-4 border-t border-border">
-                <div className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  <span>{user.email}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="w-full justify-start"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
-                </Button>
-              </div>
             </div>
           </div>
         )}

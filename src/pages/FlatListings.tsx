@@ -130,11 +130,9 @@ export default function FlatListings() {
   };
 
   const handleChatContact = (flat: FlatListing) => {
-    // Navigate to chat with this user about this flat
-    toast({
-      title: "Chat feature",
-      description: "This will open a chat with the flat owner",
-    });
+    if (flat.user_id) {
+      window.location.href = `/chat?receiver=${flat.user_id}&product=${flat.id}`;
+    }
   };
 
   // Filter flats based on search and type

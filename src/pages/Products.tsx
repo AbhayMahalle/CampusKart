@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee } from 'lucide-react';
+import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee, School } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -20,8 +21,8 @@ interface Product {
   user_id: string;
   profiles?: {
     full_name: string;
-    college: string;
-  } | null;
+    college: string | null;
+  };
 }
 
 export default function Products() {
@@ -32,13 +33,37 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlistItems, setWishlistItems] = useState<Set<string>>(new Set());
+  const [userCollege, setUserCollege] = useState<string | null>(null);
+  const [filterByCampus, setFilterByCampus] = useState(false);
 
   useEffect(() => {
     fetchProducts();
     if (user) {
       fetchWishlist();
+      fetchUserCollege();
     }
   }, [user]);
+
+  const fetchUserCollege = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('college')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user college:', error);
+        return;
+      }
+
+      setUserCollege(data?.college || null);
+    } catch (error) {
+      console.error('Error in fetchUserCollege:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -59,7 +84,27 @@ export default function Products() {
         return;
       }
 
-      setProducts(data || []);
+      // Fetch seller profiles for each product
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(p => p.user_id))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, college')
+          .in('user_id', userIds);
+
+        const profilesMap = new Map(
+          profilesData?.map(p => [p.user_id, p]) || []
+        );
+
+        const productsWithProfiles = data.map(product => ({
+          ...product,
+          profiles: profilesMap.get(product.user_id)
+        }));
+
+        setProducts(productsWithProfiles);
+      } else {
+        setProducts([]);
+      }
     } catch (error) {
       console.error('Error in fetchProducts:', error);
     } finally {
@@ -157,11 +202,16 @@ export default function Products() {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCampus = !filterByCampus || 
+      (userCollege && product.profiles?.college === userCollege);
+    
+    return matchesSearch && matchesCampus;
+  });
 
   if (loading) {
     return (
@@ -196,15 +246,36 @@ export default function Products() {
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative mb-8">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-        <Input
-          placeholder="Search products, categories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 py-6 text-base"
-        />
+      {/* Search and Filter Bar */}
+      <div className="space-y-4 mb-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search products, categories..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 py-6 text-base"
+          />
+        </div>
+        
+        {userCollege && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant={filterByCampus ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterByCampus(!filterByCampus)}
+              className="flex items-center gap-2"
+            >
+              <School className="w-4 h-4" />
+              {filterByCampus ? `Showing: ${userCollege}` : 'Filter by My Campus'}
+            </Button>
+            {filterByCampus && (
+              <Badge variant="secondary" className="text-xs">
+                {filteredProducts.length} items
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Products Grid */}
@@ -286,9 +357,12 @@ export default function Products() {
                   </div>
                   
                   <div className="space-y-2 mb-4">
-                    <p className="text-sm text-muted-foreground">
-                      Seller ID: {product.user_id.slice(0, 8)}...
-                    </p>
+                    {product.profiles?.college && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <School className="w-3 h-3" />
+                        <span className="truncate">{product.profiles.college}</span>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Listed {new Date(product.created_at).toLocaleDateString()}
                     </p>

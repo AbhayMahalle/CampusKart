@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee, School } from 'lucide-react';
+import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee, School, X } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -35,6 +35,8 @@ export default function Products() {
   const [wishlistItems, setWishlistItems] = useState<Set<string>>(new Set());
   const [userCollege, setUserCollege] = useState<string | null>(null);
   const [filterByCampus, setFilterByCampus] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -102,6 +104,14 @@ export default function Products() {
         }));
 
         setProducts(productsWithProfiles);
+        
+        // Extract unique categories
+        const categories = [...new Set(
+          data
+            .map(p => p.category)
+            .filter((cat): cat is string => cat !== null && cat !== '')
+        )].sort();
+        setAvailableCategories(categories);
       } else {
         setProducts([]);
       }
@@ -202,6 +212,24 @@ export default function Products() {
     }
   };
 
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedCategories(new Set());
+    setFilterByCampus(false);
+    setSearchQuery('');
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -210,8 +238,13 @@ export default function Products() {
     const matchesCampus = !filterByCampus || 
       (userCollege && product.profiles?.college === userCollege);
     
-    return matchesSearch && matchesCampus;
+    const matchesCategory = selectedCategories.size === 0 || 
+      (product.category && selectedCategories.has(product.category));
+    
+    return matchesSearch && matchesCampus && matchesCategory;
   });
+
+  const activeFiltersCount = (filterByCampus ? 1 : 0) + selectedCategories.size;
 
   if (loading) {
     return (
@@ -258,24 +291,65 @@ export default function Products() {
           />
         </div>
         
-        {userCollege && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant={filterByCampus ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterByCampus(!filterByCampus)}
-              className="flex items-center gap-2"
-            >
-              <School className="w-4 h-4" />
-              {filterByCampus ? `Showing: ${userCollege}` : 'Filter by My Campus'}
-            </Button>
-            {filterByCampus && (
-              <Badge variant="secondary" className="text-xs">
-                {filteredProducts.length} items
-              </Badge>
+        {/* Filters Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Filters</span>
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </div>
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-auto py-1 text-xs"
+              >
+                Clear All
+              </Button>
             )}
           </div>
-        )}
+
+          {/* Campus Filter */}
+          {userCollege && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant={filterByCampus ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterByCampus(!filterByCampus)}
+                className="flex items-center gap-2"
+              >
+                <School className="w-4 h-4" />
+                My Campus
+              </Button>
+            </div>
+          )}
+
+          {/* Category Filters */}
+          {availableCategories.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {availableCategories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategories.has(category) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCategory(category)}
+                  className="flex items-center gap-1.5"
+                >
+                  {category}
+                  {selectedCategories.has(category) && (
+                    <X className="w-3 h-3" />
+                  )}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Products Grid */}

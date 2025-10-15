@@ -99,7 +99,7 @@ export default function FlatListings() {
             .from('profiles')
             .select('full_name, phone')
             .eq('user_id', flat.user_id)
-            .single();
+            .maybeSingle();
           
           return {
             ...flat,

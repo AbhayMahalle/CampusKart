@@ -50,7 +50,7 @@ export function ChatList() {
             .from('profiles')
             .select('full_name')
             .eq('user_id', otherUserId)
-            .single();
+            .maybeSingle();
           
           return {
             ...chat,

@@ -46,7 +46,7 @@ export default function Products() {
       fetchWishlist();
       fetchUserCollege();
     }
-  }, [user]);
+  }, [user, showOnlyMyProducts]);
 
   const fetchUserCollege = async () => {
     if (!user) return;
@@ -71,10 +71,19 @@ export default function Products() {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
-        .select('*')
-        .eq('approved', true)
+        .select('*');
+      
+      // If showing only user's products, filter by user_id and don't require approval
+      if (showOnlyMyProducts && user) {
+        query = query.eq('user_id', user.id);
+      } else {
+        // For general browse, only show approved products
+        query = query.eq('approved', true);
+      }
+      
+      const { data, error } = await query
         .eq('is_available', true)
         .order('created_at', { ascending: false });
 

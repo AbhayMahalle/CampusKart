@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,7 @@ interface FlatListing {
 type SortOption = 'newest' | 'oldest' | 'rent_low' | 'rent_high';
 
 export default function FlatListings() {
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [flats, setFlats] = useState<FlatListing[]>([]);
@@ -57,12 +58,13 @@ export default function FlatListings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const showOnlyMyFlats = searchParams.get('filter') === 'mine';
 
   const flatTypes = ['1RK', '1BHK', '2BHK', '3BHK', '4BHK', 'PG', 'Shared Room'];
 
   useEffect(() => {
     fetchFlats();
-  }, [sortBy]);
+  }, [sortBy, showOnlyMyFlats, user]);
 
   const fetchFlats = async () => {
     setLoading(true);
@@ -71,6 +73,11 @@ export default function FlatListings() {
         .from('flat_listings')
         .select('*')
         .eq('is_available', true);
+
+      // If showing only user's flats, filter by user_id
+      if (showOnlyMyFlats && user) {
+        query = query.eq('user_id', user.id);
+      }
 
       // Apply sorting
       switch (sortBy) {
@@ -174,9 +181,14 @@ export default function FlatListings() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Flat Listings</h1>
+          <h1 className="text-3xl font-bold">
+            {showOnlyMyFlats ? 'Your Flat Listings' : 'Flat Listings'}
+          </h1>
           <p className="text-muted-foreground">
-            {filteredFlats.length} flats available
+            {showOnlyMyFlats 
+              ? `${filteredFlats.length} of your flats` 
+              : `${filteredFlats.length} flats available`
+            }
           </p>
         </div>
         <Link to="/add-flat">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ interface Product {
 
 export default function Products() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,6 +38,7 @@ export default function Products() {
   const [filterByCampus, setFilterByCampus] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const showOnlyMyProducts = searchParams.get('filter') === 'mine';
 
   useEffect(() => {
     fetchProducts();
@@ -241,7 +243,9 @@ export default function Products() {
     const matchesCategory = selectedCategories.size === 0 || 
       (product.category && selectedCategories.has(product.category));
     
-    return matchesSearch && matchesCampus && matchesCategory;
+    const matchesOwnership = !showOnlyMyProducts || product.user_id === user?.id;
+    
+    return matchesSearch && matchesCampus && matchesCategory && matchesOwnership;
   });
 
   const activeFiltersCount = (filterByCampus ? 1 : 0) + selectedCategories.size;
@@ -266,9 +270,14 @@ export default function Products() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Browse Products</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {showOnlyMyProducts ? 'Your Products' : 'Browse Products'}
+          </h1>
           <p className="text-muted-foreground">
-            Discover amazing deals from fellow students
+            {showOnlyMyProducts 
+              ? 'Manage your product listings' 
+              : 'Discover amazing deals from fellow students'
+            }
           </p>
         </div>
         <Button asChild size="lg" className="mt-4 sm:mt-0">

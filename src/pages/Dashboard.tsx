@@ -281,33 +281,35 @@ export default function Dashboard() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userProducts.map((product) => (
-                <Card key={product.id} className="hover:shadow-card-hover transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="aspect-square bg-muted rounded-lg mb-2 overflow-hidden">
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <CardTitle className="text-sm line-clamp-1">{product.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center text-lg font-semibold text-primary">
-                      <IndianRupee className="w-4 h-4" />
-                      {product.price.toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Listed {new Date(product.created_at).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
+                <Link key={product.id} to={`/products/${product.id}`}>
+                  <Card className="hover:shadow-card-hover transition-shadow cursor-pointer h-full">
+                    <CardHeader className="pb-2">
+                      <div className="aspect-square bg-muted rounded-lg mb-2 overflow-hidden">
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <CardTitle className="text-sm line-clamp-1">{product.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center text-lg font-semibold text-primary">
+                        <IndianRupee className="w-4 h-4" />
+                        {product.price.toLocaleString()}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Listed {new Date(product.created_at).toLocaleDateString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

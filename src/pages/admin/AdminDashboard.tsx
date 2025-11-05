@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +15,14 @@ import {
   X, 
   Eye,
   TrendingUp,
-  IndianRupee 
+  IndianRupee,
+  LayoutDashboard,
+  ScrollText,
+  Settings
 } from 'lucide-react';
+import UserManagement from './UserManagement';
+import AdminLogs from './AdminLogs';
+import AdminSettings from './AdminSettings';
 
 interface DashboardStats {
   totalUsers: number;
@@ -38,8 +45,7 @@ interface Product {
   };
 }
 
-export default function AdminDashboard() {
-  const { user, isAdmin } = useAuth();
+function DashboardHome() {
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -52,10 +58,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchDashboardData();
-    }
-  }, [isAdmin]);
+    fetchDashboardData();
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -136,17 +140,6 @@ export default function AdminDashboard() {
       });
     }
   };
-
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-4">Access Denied</h1>
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -286,6 +279,67 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+export default function AdminDashboard() {
+  const { isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const navItems = [
+    { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/admin/users', label: 'Users', icon: Users },
+    { path: '/admin/logs', label: 'Activity Logs', icon: ScrollText },
+    { path: '/admin/settings', label: 'Settings', icon: Settings },
+  ];
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <div className="w-64 bg-card border-r">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-6">Admin Panel</h2>
+          <nav className="space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Link key={item.path} to={item.path}>
+                  <Button
+                    variant={isActive ? 'default' : 'ghost'}
+                    className="w-full justify-start"
+                  >
+                    <Icon className="w-4 h-4 mr-2" />
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<DashboardHome />} />
+          <Route path="/users" element={<UserManagement />} />
+          <Route path="/logs" element={<AdminLogs />} />
+          <Route path="/settings" element={<AdminSettings />} />
+        </Routes>
+      </div>
     </div>
   );
 }

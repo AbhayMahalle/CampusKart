@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
       admins: {
         Row: {
           created_at: string
@@ -35,6 +65,27 @@ export type Database = {
           id?: string
           role?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
@@ -216,6 +267,7 @@ export type Database = {
           id: string
           phone: string | null
           role: string | null
+          status: string | null
           updated_at: string
           user_id: string
         }
@@ -228,6 +280,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: string | null
+          status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -240,6 +293,7 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: string | null
+          status?: string | null
           updated_at?: string
           user_id?: string
         }

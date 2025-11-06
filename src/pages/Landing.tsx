@@ -44,28 +44,30 @@ export default function Landing() {
           variant: "destructive",
         });
       } else {
-        toast({
-          title: isLogin ? "Welcome back!" : "Account created successfully!",
-          description: isLogin ? "Redirecting..." : "You can now sign in.",
-        });
         if (isLogin) {
-          // Check if user is admin and redirect accordingly
-          await checkAdminStatus();
-          
-          // Small delay to let admin status check complete
-          setTimeout(async () => {
+          // Check admin status first
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
             const { data: adminCheck } = await supabase
               .from('admins')
               .select('id')
-              .eq('email', formData.email)
+              .eq('user_id', user.id)
               .maybeSingle();
             
-            if (adminCheck) {
-              navigate('/admin');
-            } else {
-              navigate('/dashboard');
-            }
-          }, 500);
+            toast({
+              title: "Welcome back!",
+              description: adminCheck ? "Redirecting to admin panel..." : "Redirecting to dashboard...",
+            });
+            
+            setTimeout(() => {
+              navigate(adminCheck ? '/admin' : '/dashboard');
+            }, 100);
+          }
+        } else {
+          toast({
+            title: "Account created successfully!",
+            description: "You can now sign in.",
+          });
         }
       }
     } catch (error) {

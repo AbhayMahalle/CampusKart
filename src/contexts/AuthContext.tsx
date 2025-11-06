@@ -67,15 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('admins')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // Not found error is OK
+      if (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
         return;
       }
 
-      setIsAdmin(!!data);
+      const adminStatus = !!data;
+      setIsAdmin(adminStatus);
+      console.log('Admin status checked:', adminStatus, 'for user:', user.id);
     } catch (error) {
       console.error('Error in checkAdminStatus:', error);
       setIsAdmin(false);

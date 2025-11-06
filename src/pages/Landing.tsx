@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { ShoppingBag, Users, MessageCircle, Building2, Loader2 } from 'lucide-react';
 import heroImage from '@/assets/hero-image.jpg';
 
@@ -20,7 +21,7 @@ export default function Landing() {
     college: ''
   });
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, checkAdminStatus } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -45,10 +46,26 @@ export default function Landing() {
       } else {
         toast({
           title: isLogin ? "Welcome back!" : "Account created successfully!",
-          description: isLogin ? "Redirecting to your dashboard..." : "Please check your email to verify your account.",
+          description: isLogin ? "Redirecting..." : "You can now sign in.",
         });
         if (isLogin) {
-          navigate('/dashboard');
+          // Check if user is admin and redirect accordingly
+          await checkAdminStatus();
+          
+          // Small delay to let admin status check complete
+          setTimeout(async () => {
+            const { data: adminCheck } = await supabase
+              .from('admins')
+              .select('id')
+              .eq('email', formData.email)
+              .maybeSingle();
+            
+            if (adminCheck) {
+              navigate('/admin');
+            } else {
+              navigate('/dashboard');
+            }
+          }, 500);
         }
       }
     } catch (error) {

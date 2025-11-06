@@ -225,7 +225,7 @@ export default function Landing() {
 
                     <Separator className="my-6" />
 
-                    <div className="text-center">
+                    <div className="text-center space-y-3">
                       <p className="text-sm text-muted-foreground mb-4">
                         {isLogin ? "Don't have an account?" : "Already have an account?"}
                       </p>
@@ -237,6 +237,24 @@ export default function Landing() {
                       >
                         {isLogin ? 'Create Account' : 'Sign In'}
                       </Button>
+                      
+                      {!isLogin && (
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setFormData({
+                              email: 'admin@vit.edu',
+                              password: 'admin@123',
+                              fullName: 'Admin User',
+                              college: 'VIT'
+                            });
+                          }}
+                          className="w-full"
+                          type="button"
+                        >
+                          Quick Admin Setup
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

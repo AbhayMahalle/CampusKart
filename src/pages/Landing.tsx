@@ -21,7 +21,7 @@ export default function Landing() {
     college: ''
   });
 
-  const { signIn, signUp, checkAdminStatus } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -44,30 +44,15 @@ export default function Landing() {
           variant: "destructive",
         });
       } else {
+        toast({
+          title: isLogin ? "Welcome back!" : "Account created successfully!",
+          description: isLogin ? "Redirecting to dashboard..." : "You can now sign in.",
+        });
+        
         if (isLogin) {
-          // Check admin status first
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: adminCheck } = await supabase
-              .from('admins')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle();
-            
-            toast({
-              title: "Welcome back!",
-              description: adminCheck ? "Redirecting to admin panel..." : "Redirecting to dashboard...",
-            });
-            
-            setTimeout(() => {
-              navigate(adminCheck ? '/admin' : '/dashboard');
-            }, 100);
-          }
-        } else {
-          toast({
-            title: "Account created successfully!",
-            description: "You can now sign in.",
-          });
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         }
       }
     } catch (error) {
@@ -256,24 +241,6 @@ export default function Landing() {
                       >
                         {isLogin ? 'Create Account' : 'Sign In'}
                       </Button>
-                      
-                      {!isLogin && (
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            setFormData({
-                              email: 'admin@vit.edu',
-                              password: 'admin@123',
-                              fullName: 'Admin User',
-                              college: 'VIT'
-                            });
-                          }}
-                          className="w-full"
-                          type="button"
-                        >
-                          Quick Admin Setup
-                        </Button>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

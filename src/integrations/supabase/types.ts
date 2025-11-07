@@ -14,81 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_logs: {
-        Row: {
-          action: string
-          admin_id: string
-          created_at: string
-          details: Json | null
-          id: string
-          target_id: string | null
-          target_type: string
-        }
-        Insert: {
-          action: string
-          admin_id: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          target_id?: string | null
-          target_type: string
-        }
-        Update: {
-          action?: string
-          admin_id?: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          target_id?: string | null
-          target_type?: string
-        }
-        Relationships: []
-      }
-      admins: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          role: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          role?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          role?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      app_settings: {
-        Row: {
-          id: string
-          key: string
-          updated_at: string
-          value: Json
-        }
-        Insert: {
-          id?: string
-          key: string
-          updated_at?: string
-          value: Json
-        }
-        Update: {
-          id?: string
-          key?: string
-          updated_at?: string
-          value?: Json
-        }
-        Relationships: []
-      }
       chats: {
         Row: {
           created_at: string
@@ -333,7 +258,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_admin_role: { Args: { _user_id: string }; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

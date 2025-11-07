@@ -16,7 +16,6 @@ import Wishlist from "./pages/Wishlist";
 import FlatListings from "./pages/FlatListings";
 import Chat from "./pages/Chat";
 import ChatWindow from "./pages/ChatWindow";
-import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,35 +43,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAdmin } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return (
-    <>
-      <Navigation />
-      {children}
-    </>
-  );
-}
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -83,8 +56,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
-    // Redirect admins to admin dashboard, regular users to dashboard
-    return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -150,13 +122,6 @@ function AppRoutes() {
         <ProtectedRoute>
           <ChatWindow />
         </ProtectedRoute>
-      } />
-
-      {/* Admin Routes */}
-      <Route path="/admin/*" element={
-        <AdminRoute>
-          <AdminDashboard />
-        </AdminRoute>
       } />
 
       {/* Catch All */}

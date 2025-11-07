@@ -13,12 +13,11 @@ import {
   MessageCircle, 
   User,
   Menu,
-  X,
-  Shield
+  X
 } from 'lucide-react';
 
 export function Navigation() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -108,20 +107,6 @@ export function Navigation() {
               </Avatar>
               <span>Profile</span>
             </Link>
-            
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname.startsWith('/admin')
-                    ? 'bg-warning text-warning-foreground'
-                    : 'text-warning hover:bg-warning/10'
-                }`}
-              >
-                <Shield className="w-4 h-4" />
-                <span>Admin</span>
-              </Link>
-            )}
           </div>
 
 
@@ -174,21 +159,6 @@ export function Navigation() {
                 </Avatar>
                 <span>Profile</span>
               </Link>
-              
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname.startsWith('/admin')
-                      ? 'bg-warning text-warning-foreground'
-                      : 'text-warning hover:bg-warning/10'
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span>Admin Panel</span>
-                </Link>
-              )}
             </div>
           </div>
         )}

@@ -9,8 +9,6 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, college: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
-  checkAdminStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,70 +17,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Check admin status when user changes
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus();
-          }, 0);
-        } else {
-          setIsAdmin(false);
-        }
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      if (session?.user) {
-        setTimeout(() => {
-          checkAdminStatus();
-        }, 0);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminStatus = async () => {
-    if (!user) {
-      setIsAdmin(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-        return;
-      }
-
-      const adminStatus = !!data;
-      setIsAdmin(adminStatus);
-      console.log('Admin status checked:', adminStatus, 'for user:', user.id);
-    } catch (error) {
-      console.error('Error in checkAdminStatus:', error);
-      setIsAdmin(false);
-    }
-  };
 
   const signUp = async (email: string, password: string, fullName: string, college: string) => {
     const redirectUrl = `${window.location.origin}/`;
@@ -122,9 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
-    signOut,
-    isAdmin,
-    checkAdminStatus
+    signOut
   };
 
   return (

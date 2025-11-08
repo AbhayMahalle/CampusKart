@@ -10,7 +10,6 @@ import {
   Plus, 
   Heart, 
   Building2, 
-  MessageCircle, 
   User,
   Menu,
   X
@@ -55,7 +54,6 @@ export function Navigation() {
     { path: '/wishlist', icon: Heart, label: 'Wishlist' },
     { path: '/flats', icon: Building2, label: 'Flats' },
     { path: '/add-flat', icon: Plus, label: 'Add Flat' },
-    { path: '/chat', icon: MessageCircle, label: 'Chat' },
   ];
 
   if (!user) return null;

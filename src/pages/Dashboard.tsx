@@ -122,18 +122,17 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      const [productsRes, wishlistRes, flatsRes, messagesRes] = await Promise.all([
+      const [productsRes, wishlistRes, flatsRes] = await Promise.all([
         supabase.from('products').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('wishlist').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('flat_listings').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('messages').select('id', { count: 'exact' }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        supabase.from('flat_listings').select('id', { count: 'exact' }).eq('user_id', user.id)
       ]);
 
       setStats({
         totalProducts: productsRes.count || 0,
         totalWishlist: wishlistRes.count || 0,
         totalFlats: flatsRes.count || 0,
-        totalMessages: messagesRes.count || 0
+        totalMessages: 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);

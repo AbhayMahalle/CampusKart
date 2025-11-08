@@ -10,14 +10,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, 
   Heart, 
-  MessageCircle, 
   Phone, 
   User, 
   Calendar,
   IndianRupee,
   Package,
   Tag,
-  MapPin,
   School
 } from 'lucide-react';
 
@@ -197,16 +195,17 @@ export default function ProductDetail() {
   };
 
   const handleWhatsAppContact = () => {
-    const phone = product?.seller_phone || seller?.phone;
+    const phone = product?.seller_phone;
     if (phone) {
       const message = `Hi, I'm interested in your item '${product?.name}' on CampusKart.`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-    }
-  };
-
-  const handleInAppChat = () => {
-    if (product && seller) {
-      window.location.href = `/chat?receiver=${seller.user_id}&product=${product.id}`;
+      const cleanedPhone = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      toast({
+        title: "Phone number not available",
+        description: "Seller hasn't added a phone number for WhatsApp contact.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -246,7 +245,6 @@ export default function ProductDetail() {
   }
 
   const isOwnProduct = product.user_id === user?.id;
-  const hasWhatsApp = Boolean(product.seller_phone || seller?.phone);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -349,50 +347,24 @@ export default function ProductDetail() {
           {/* Action Buttons */}
           {!isOwnProduct && product.is_available && !product.sold && (
             <div className="space-y-3">
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={toggleWishlist}
-                  disabled={addingToWishlist}
-                  className="flex-1"
-                >
-                  <Heart className={`w-4 h-4 mr-2 ${isInWishlist ? 'fill-current' : ''}`} />
-                  {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                onClick={toggleWishlist}
+                disabled={addingToWishlist}
+                className="w-full"
+              >
+                <Heart className={`w-4 h-4 mr-2 ${isInWishlist ? 'fill-current' : ''}`} />
+                {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              </Button>
               
-              <div className="flex gap-3">
-                {hasWhatsApp ? (
-                  <Button
-                    onClick={handleWhatsAppContact}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Contact on WhatsApp
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleInAppChat}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Chat with Seller
-                  </Button>
-                )}
-              </div>
-
-              {hasWhatsApp && (
-                <Button
-                  variant="outline"
-                  onClick={handleInAppChat}
-                  className="w-full"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Or chat in app
-                </Button>
-              )}
+              <Button
+                onClick={handleWhatsAppContact}
+                className="w-full"
+                size="lg"
+              >
+                <Phone className="w-4 h-4 mr-2" />
+                Contact Seller on WhatsApp
+              </Button>
             </div>
           )}
 

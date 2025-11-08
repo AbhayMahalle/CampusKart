@@ -96,7 +96,7 @@ export default function Profile() {
         .from('profiles')
         .update({
           full_name: formData.full_name,
-          phone: formData.phone || null,
+          phone: formData.phone,
           college: formData.college || null,
           avatar_url: formData.avatar_url || null,
         })
@@ -257,18 +257,19 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="phone">
                   <Phone className="w-4 h-4 inline mr-2" />
-                  Phone Number (Optional)
+                  WhatsApp Number *
                 </Label>
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+919876543210"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Add your phone number to enable WhatsApp messaging for your listings
+                  Required - This will be used for all communication with buyers/renters
                 </p>
               </div>
 
@@ -326,25 +327,17 @@ export default function Profile() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Privacy Settings</CardTitle>
+              <CardTitle>Communication</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">WhatsApp Integration</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {profile.phone 
-                      ? 'Users can contact you via WhatsApp for your listings'
-                      : 'Add a phone number to enable WhatsApp messaging'
-                    }
-                  </p>
-                </div>
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">In-App Chat</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Users can always contact you through our secure in-app messaging system
-                  </p>
-                </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium text-sm mb-2">WhatsApp Contact</h4>
+                <p className="text-xs text-muted-foreground">
+                  {profile.phone 
+                    ? 'Buyers and renters will contact you via WhatsApp'
+                    : 'Please add your WhatsApp number to enable communication'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>

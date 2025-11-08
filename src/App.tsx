@@ -14,8 +14,6 @@ import AddFlat from "./pages/AddFlat";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
 import FlatListings from "./pages/FlatListings";
-import Chat from "./pages/Chat";
-import ChatWindow from "./pages/ChatWindow";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -111,16 +109,6 @@ function AppRoutes() {
       <Route path="/profile" element={
         <ProtectedRoute>
           <Profile />
-        </ProtectedRoute>
-      } />
-      <Route path="/chat" element={
-        <ProtectedRoute>
-          <Chat />
-        </ProtectedRoute>
-      } />
-      <Route path="/chat/:chatId" element={
-        <ProtectedRoute>
-          <ChatWindow />
         </ProtectedRoute>
       } />
 

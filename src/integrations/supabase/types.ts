@@ -14,42 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
-      chats: {
-        Row: {
-          created_at: string
-          id: string
-          last_message: string | null
-          product_id: string | null
-          receiver_id: string
-          sender_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          last_message?: string | null
-          product_id?: string | null
-          receiver_id: string
-          sender_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          last_message?: string | null
-          product_id?: string | null
-          receiver_id?: string
-          sender_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       flat_listings: {
         Row: {
           available_from: string | null
           bathrooms: number | null
           bedrooms: number | null
-          contact_number: string | null
+          contact_number: string
           created_at: string
           description: string | null
           flat_type: string | null
@@ -66,7 +36,7 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
-          contact_number?: string | null
+          contact_number?: string
           created_at?: string
           description?: string | null
           flat_type?: string | null
@@ -83,7 +53,7 @@ export type Database = {
           available_from?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
-          contact_number?: string | null
+          contact_number?: string
           created_at?: string
           description?: string | null
           flat_type?: string | null
@@ -98,39 +68,6 @@ export type Database = {
         }
         Relationships: []
       }
-      messages: {
-        Row: {
-          chat_id: string | null
-          created_at: string
-          id: string
-          message: string
-          read: boolean | null
-          receiver_id: string
-          sender_id: string
-          timestamp: string | null
-        }
-        Insert: {
-          chat_id?: string | null
-          created_at?: string
-          id?: string
-          message: string
-          read?: boolean | null
-          receiver_id: string
-          sender_id: string
-          timestamp?: string | null
-        }
-        Update: {
-          chat_id?: string | null
-          created_at?: string
-          id?: string
-          message?: string
-          read?: boolean | null
-          receiver_id?: string
-          sender_id?: string
-          timestamp?: string | null
-        }
-        Relationships: []
-      }
       products: {
         Row: {
           approved: boolean | null
@@ -142,7 +79,7 @@ export type Database = {
           is_available: boolean | null
           name: string
           price: number
-          seller_phone: string | null
+          seller_phone: string
           sold: boolean | null
           title: string | null
           updated_at: string
@@ -158,7 +95,7 @@ export type Database = {
           is_available?: boolean | null
           name: string
           price: number
-          seller_phone?: string | null
+          seller_phone?: string
           sold?: boolean | null
           title?: string | null
           updated_at?: string
@@ -174,7 +111,7 @@ export type Database = {
           is_available?: boolean | null
           name?: string
           price?: number
-          seller_phone?: string | null
+          seller_phone?: string
           sold?: boolean | null
           title?: string | null
           updated_at?: string
@@ -190,7 +127,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
-          phone: string | null
+          phone: string
           role: string | null
           status: string | null
           updated_at: string
@@ -203,7 +140,7 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
-          phone?: string | null
+          phone?: string
           role?: string | null
           status?: string | null
           updated_at?: string
@@ -216,7 +153,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
-          phone?: string | null
+          phone?: string
           role?: string | null
           status?: string | null
           updated_at?: string

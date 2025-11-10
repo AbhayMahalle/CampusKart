@@ -28,6 +28,19 @@ export default function AddProduct() {
     e.preventDefault();
     if (!user) return;
 
+    // Validate phone number
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    const cleanedPhone = formData.seller_phone.replace(/\s/g, '');
+    
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid WhatsApp number with country code (e.g., +919876543210)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -40,7 +53,7 @@ export default function AddProduct() {
           price: parseFloat(formData.price),
           category: formData.category || null,
           image_url: formData.image_url || null,
-          seller_phone: formData.seller_phone
+          seller_phone: cleanedPhone
         });
 
       if (error) {
@@ -170,9 +183,11 @@ export default function AddProduct() {
                 value={formData.seller_phone}
                 onChange={handleInputChange}
                 required
+                pattern="^\+?[1-9]\d{9,14}$"
+                title="Enter phone number with country code (e.g., +919876543210)"
               />
               <p className="text-xs text-muted-foreground">
-                Required - Buyers will contact you on WhatsApp
+                Include country code (e.g., +91 for India). Buyers will contact you on WhatsApp.
               </p>
             </div>
 

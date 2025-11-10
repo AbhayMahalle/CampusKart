@@ -90,13 +90,26 @@ export default function Profile() {
     e.preventDefault();
     if (!user || !profile) return;
 
+    // Validate phone number
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    const cleanedPhone = formData.phone.replace(/\s/g, '');
+    
+    if (!phoneRegex.test(cleanedPhone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number with country code (e.g., +919876543210)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,
-          phone: formData.phone,
+          phone: cleanedPhone,
           college: formData.college || null,
           avatar_url: formData.avatar_url || null,
         })
@@ -267,9 +280,11 @@ export default function Profile() {
                   value={formData.phone}
                   onChange={handleInputChange}
                   required
+                  pattern="^\+?[1-9]\d{9,14}$"
+                  title="Enter phone number with country code (e.g., +919876543210)"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Required - This will be used for all communication with buyers/renters
+                  Required - Include country code (e.g., +91 for India). Used for WhatsApp communication.
                 </p>
               </div>
 

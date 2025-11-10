@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ShoppingBag, Heart, Building2, MessageCircle, TrendingUp, Package, Users, IndianRupee, ArrowRight } from 'lucide-react';
+import { Plus, ShoppingBag, Heart, Building2, TrendingUp, Package, IndianRupee, ArrowRight } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -19,7 +19,6 @@ interface DashboardStats {
   totalProducts: number;
   totalWishlist: number;
   totalFlats: number;
-  totalMessages: number;
 }
 
 export default function Dashboard() {
@@ -30,8 +29,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalWishlist: 0,
-    totalFlats: 0,
-    totalMessages: 0
+    totalFlats: 0
   });
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -131,8 +129,7 @@ export default function Dashboard() {
       setStats({
         totalProducts: productsRes.count || 0,
         totalWishlist: wishlistRes.count || 0,
-        totalFlats: flatsRes.count || 0,
-        totalMessages: 0
+        totalFlats: flatsRes.count || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -167,7 +164,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Link to="/products?filter=mine">
           <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -206,23 +203,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </Link>
-
-        <Link to="/chat">
-          <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageCircle className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.totalMessages}</div>
-              <p className="text-xs text-muted-foreground">Total conversations</p>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
         <Button asChild variant="hero" size="lg" className="h-16">
           <Link to="/add-product" className="flex flex-col items-center space-y-1">
             <Plus className="w-6 h-6" />
@@ -241,13 +225,6 @@ export default function Dashboard() {
           <Link to="/flats" className="flex flex-col items-center space-y-1">
             <Building2 className="w-6 h-6" />
             <span>Find Flats</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="outline" size="lg" className="h-16">
-          <Link to="/chat" className="flex flex-col items-center space-y-1">
-            <MessageCircle className="w-6 h-6" />
-            <span>Chat</span>
           </Link>
         </Button>
       </div>

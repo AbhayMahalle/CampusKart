@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee, School, X } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -464,7 +465,10 @@ export default function Products() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toggleWishlist(product.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(product.id);
+                      }}
                       className="flex-1"
                     >
                       <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
@@ -477,29 +481,14 @@ export default function Products() {
                       >
                         Your Item
                       </Button>
-                    ) : product.seller_phone ? (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          const message = `Hi, I'm interested in your item '${product.name}' on CampusKart.`;
-                          window.open(`https://wa.me/${product.seller_phone}?text=${encodeURIComponent(message)}`, '_blank');
-                        }}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        WhatsApp
-                      </Button>
                     ) : (
-                      <Button
+                      <WhatsAppButton
+                        phone={product.seller_phone}
+                        message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                        productName={product.name}
                         size="sm"
                         className="flex-1"
-                        onClick={() => {
-                          window.location.href = `/chat?receiver=${product.user_id}&product=${product.id}`;
-                        }}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        Chat
-                      </Button>
+                      />
                     )}
                   </div>
                 </CardContent>

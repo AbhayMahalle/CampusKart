@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ArrowLeft, 
   Heart, 
-  Phone, 
   User, 
   Calendar,
   IndianRupee,
@@ -194,20 +194,6 @@ export default function ProductDetail() {
     }
   };
 
-  const handleWhatsAppContact = () => {
-    const phone = product?.seller_phone;
-    if (phone) {
-      const message = `Hi, I'm interested in your item '${product?.name}' on CampusKart.`;
-      const cleanedPhone = phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`, '_blank');
-    } else {
-      toast({
-        title: "Phone number not available",
-        description: "Seller hasn't added a phone number for WhatsApp contact.",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -357,14 +343,14 @@ export default function ProductDetail() {
                 {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
               </Button>
               
-              <Button
-                onClick={handleWhatsAppContact}
-                className="w-full"
+              <WhatsAppButton
+                phone={product.seller_phone}
+                message={`Hi ${seller?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                productName={product.name}
                 size="lg"
-              >
-                <Phone className="w-4 h-4 mr-2" />
-                Contact Seller on WhatsApp
-              </Button>
+                className="w-full"
+                showText={true}
+              />
             </div>
           )}
 

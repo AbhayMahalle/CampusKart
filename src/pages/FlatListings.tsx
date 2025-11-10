@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { openWhatsApp, generateFlatMessage } from '@/utils/whatsapp';
 import { 
   Plus, 
   Search, 
-  Phone,
-  MessageCircle,
   User,
   IndianRupee,
   Calendar,
@@ -128,19 +126,6 @@ export default function FlatListings() {
     }
   };
 
-  const handleWhatsAppContact = (flat: FlatListing) => {
-    const phone = flat.contact_number || flat.profiles?.phone;
-    if (phone) {
-      const message = generateFlatMessage(flat.title, flat.profiles?.full_name);
-      openWhatsApp({ phone, message });
-    }
-  };
-
-  const handleChatContact = (flat: FlatListing) => {
-    if (flat.user_id) {
-      window.location.href = `/chat?receiver=${flat.user_id}&product=${flat.id}`;
-    }
-  };
 
   // Filter flats based on search and type
   const filteredFlats = flats.filter(flat => {
@@ -362,27 +347,14 @@ export default function FlatListings() {
 
                     {/* Contact Buttons */}
                     {!isOwnListing && (
-                      <div className="flex space-x-2 pt-2">
-                        {hasWhatsApp ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleWhatsAppContact(flat)}
-                            className="flex-1"
-                          >
-                            <Phone className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleChatContact(flat)}
-                            className="flex-1"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Chat
-                          </Button>
-                        )}
+                      <div className="pt-2">
+                        <WhatsAppButton
+                          phone={flat.contact_number || flat.profiles?.phone}
+                          message={`Hi ${flat.profiles?.full_name || ''}, I saw your flat listing '${flat.title}' on CampusKart. I'm interested in learning more about it.`}
+                          productName={flat.title}
+                          size="sm"
+                          className="w-full"
+                        />
                       </div>
                     )}
                   </div>

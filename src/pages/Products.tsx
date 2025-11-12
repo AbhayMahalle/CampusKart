@@ -8,7 +8,8 @@ import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Product {
   id: string;
@@ -20,6 +21,8 @@ interface Product {
   seller_phone: string | null;
   created_at: string;
   user_id: string;
+  is_available: boolean;
+  sold: boolean;
   profiles?: {
     full_name: string;
     college: string | null;
@@ -221,6 +224,69 @@ export default function Products() {
       }
     } catch (error) {
       console.error('Error in toggleWishlist:', error);
+    }
+  };
+
+  const handleStatusUpdate = async (productId: string, status: 'available' | 'sold' | 'unavailable') => {
+    try {
+      const updates: any = {};
+      
+      if (status === 'available') {
+        updates.is_available = true;
+        updates.sold = false;
+      } else if (status === 'sold') {
+        updates.sold = true;
+        updates.is_available = false;
+      } else if (status === 'unavailable') {
+        updates.is_available = false;
+        updates.sold = false;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      fetchProducts();
+      toast({
+        title: "Status Updated",
+        description: `Product marked as ${status}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      fetchProducts();
+      toast({
+        title: "Product Deleted",
+        description: "Your product has been removed"
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
     }
   };
 
@@ -464,7 +530,7 @@ export default function Products() {
                   {product.seller_phone && product.user_id !== user?.id && (
                     <a 
                       href={`tel:${product.seller_phone}`}
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Phone className="w-3.5 h-3.5" />
@@ -473,33 +539,73 @@ export default function Products() {
                   )}
 
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWishlist(product.id);
-                      }}
-                      className="flex-1"
-                    >
-                      <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
-                    </Button>
                     {product.user_id === user?.id ? (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        disabled
-                      >
-                        Your Item
-                      </Button>
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'available');
+                            }}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark as Available
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'sold');
+                            }}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark as Sold
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'unavailable');
+                            }}>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Mark as Unavailable
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(product.id);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Product
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Badge variant={product.sold ? "destructive" : product.is_available ? "default" : "secondary"}>
+                          {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
+                        </Badge>
+                      </>
                     ) : (
-                      <WhatsAppButton
-                        phone={product.seller_phone}
-                        message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
-                        productName={product.name}
-                        size="sm"
-                        className="flex-1"
-                      />
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(product.id);
+                          }}
+                          className="flex-1"
+                        >
+                          <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
+                        </Button>
+                        <WhatsAppButton
+                          phone={product.seller_phone}
+                          message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                          productName={product.name}
+                          size="sm"
+                          className="flex-1"
+                        />
+                      </>
                     )}
                   </div>
                 </CardContent>

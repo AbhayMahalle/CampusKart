@@ -8,7 +8,7 @@ import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -460,6 +460,17 @@ export default function Products() {
                       Listed {new Date(product.created_at).toLocaleDateString()}
                     </p>
                   </div>
+
+                  {product.seller_phone && product.user_id !== user?.id && (
+                    <a 
+                      href={`tel:${product.seller_phone}`}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{product.seller_phone}</span>
+                    </a>
+                  )}
 
                   <div className="flex gap-2">
                     <Button

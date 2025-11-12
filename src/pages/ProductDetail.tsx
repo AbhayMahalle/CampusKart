@@ -16,7 +16,8 @@ import {
   IndianRupee,
   Package,
   Tag,
-  School
+  School,
+  Phone
 } from 'lucide-react';
 
 interface Product {
@@ -327,6 +328,17 @@ export default function ProductDetail() {
                   Listed {new Date(product.created_at).toLocaleDateString()}
                 </span>
               </div>
+              {product.seller_phone && (
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <a 
+                    href={`tel:${product.seller_phone}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {product.seller_phone}
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
 

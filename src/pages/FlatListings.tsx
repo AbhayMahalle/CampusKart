@@ -21,7 +21,8 @@ import {
   Bath,
   Home,
   Filter,
-  SortAsc
+  SortAsc,
+  Phone
 } from 'lucide-react';
 
 interface FlatListing {
@@ -330,6 +331,17 @@ export default function FlatListings() {
                       <User className="w-4 h-4" />
                       <span>{flat.profiles?.full_name || 'Anonymous'}</span>
                     </div>
+
+                    {/* Contact Number */}
+                    {!isOwnListing && (flat.contact_number || flat.profiles?.phone) && (
+                      <a 
+                        href={`tel:${flat.contact_number || flat.profiles?.phone}`}
+                        className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                      >
+                        <Phone className="w-4 h-4" />
+                        <span>{flat.contact_number || flat.profiles?.phone}</span>
+                      </a>
+                    )}
 
                     {/* Available From */}
                     {flat.available_from && (

@@ -65,6 +65,19 @@ export default function AddFlat() {
     e.preventDefault();
     if (!user) return;
 
+    // Validate phone number
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    const cleanedPhone = formData.contact_number.replace(/\s/g, '');
+    
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid WhatsApp number with country code (e.g., +919876543210)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -79,7 +92,7 @@ export default function AddFlat() {
           bathrooms: parseInt(formData.bathrooms) || null,
           flat_type: formData.flat_type || null,
           available_from: formData.available_from || null,
-          contact_number: formData.contact_number || null,
+          contact_number: cleanedPhone,
           image_url: formData.image_url || null,
           is_available: true
         });
@@ -261,17 +274,20 @@ export default function AddFlat() {
 
               {/* Contact Number */}
               <div className="space-y-2">
-                <Label htmlFor="contact_number">Contact Number (Optional)</Label>
+                <Label htmlFor="contact_number">WhatsApp Number *</Label>
                 <Input
                   id="contact_number"
                   name="contact_number"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+919876543210"
                   value={formData.contact_number}
                   onChange={handleInputChange}
+                  required
+                  pattern="^\+?[1-9]\d{9,14}$"
+                  title="Enter phone number with country code (e.g., +919876543210)"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Add your phone number to enable WhatsApp messaging. Otherwise, users can contact you through in-app chat.
+                  Include country code (e.g., +91 for India). Interested users will contact you on WhatsApp.
                 </p>
               </div>
 

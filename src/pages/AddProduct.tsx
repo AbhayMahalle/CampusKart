@@ -20,12 +20,26 @@ export default function AddProduct() {
     description: '',
     price: '',
     category: '',
-    image_url: ''
+    image_url: '',
+    seller_phone: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate phone number
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    const cleanedPhone = formData.seller_phone.replace(/\s/g, '');
+    
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid WhatsApp number with country code (e.g., +919876543210)",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -38,7 +52,8 @@ export default function AddProduct() {
           description: formData.description,
           price: parseFloat(formData.price),
           category: formData.category || null,
-          image_url: formData.image_url || null
+          image_url: formData.image_url || null,
+          seller_phone: cleanedPhone
         });
 
       if (error) {
@@ -156,6 +171,24 @@ export default function AddProduct() {
                 value={formData.image_url}
                 onChange={handleInputChange}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seller_phone">WhatsApp Number *</Label>
+              <Input
+                id="seller_phone"
+                name="seller_phone"
+                type="tel"
+                placeholder="+919876543210"
+                value={formData.seller_phone}
+                onChange={handleInputChange}
+                required
+                pattern="^\+?[1-9]\d{9,14}$"
+                title="Enter phone number with country code (e.g., +919876543210)"
+              />
+              <p className="text-xs text-muted-foreground">
+                Include country code (e.g., +91 for India). Buyers will contact you on WhatsApp.
+              </p>
             </div>
 
             <div className="flex gap-4">

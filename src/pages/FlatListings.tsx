@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { openWhatsApp, generateFlatMessage } from '@/utils/whatsapp';
 import { 
   Plus, 
   Search, 
-  Phone,
-  MessageCircle,
   User,
   IndianRupee,
   Calendar,
@@ -23,7 +22,12 @@ import {
   Bath,
   Home,
   Filter,
-  SortAsc
+  SortAsc,
+  Phone,
+  MoreVertical,
+  Trash2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface FlatListing {
@@ -64,6 +68,64 @@ export default function FlatListings() {
 
   useEffect(() => {
     fetchFlats();
+
+    // Set up real-time subscription for flat listings
+    const flatsChannel = supabase
+      .channel('flats-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'flat_listings'
+        },
+        (payload) => {
+          // Handle real-time updates
+          if (payload.eventType === 'UPDATE') {
+            const updatedFlat = payload.new as FlatListing;
+            setFlats(prev => {
+              const index = prev.findIndex(f => f.id === updatedFlat.id);
+              if (index === -1) {
+                // Flat not in current list, might need to add it if it matches filters
+                if (showOnlyMyFlats && updatedFlat.user_id === user?.id && updatedFlat.is_available) {
+                  fetchFlats(); // Refetch to get profile data
+                } else if (!showOnlyMyFlats && updatedFlat.is_available) {
+                  fetchFlats(); // Refetch to get profile data
+                }
+                return prev;
+              } else {
+                // Update existing flat
+                const newFlats = [...prev];
+                // If flat is no longer available and we're NOT showing only my flats, remove it
+                // (because buyers should only see available flats)
+                if (!showOnlyMyFlats && !updatedFlat.is_available) {
+                  newFlats.splice(index, 1);
+                } else {
+                  // Update the flat, but we need to preserve profile data
+                  newFlats[index] = { ...updatedFlat, profiles: prev[index].profiles };
+                }
+                return newFlats;
+              }
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedFlat = payload.old as FlatListing;
+            setFlats(prev => prev.filter(f => f.id !== deletedFlat.id));
+          } else if (payload.eventType === 'INSERT') {
+            const newFlat = payload.new as FlatListing;
+            // Only add if it matches current filters
+            if (showOnlyMyFlats && newFlat.user_id === user?.id && newFlat.is_available) {
+              fetchFlats(); // Refetch to get profile data
+            } else if (!showOnlyMyFlats && newFlat.is_available) {
+              fetchFlats(); // Refetch to get profile data
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(flatsChannel);
+    };
   }, [sortBy, showOnlyMyFlats, user]);
 
   const fetchFlats = async () => {
@@ -71,12 +133,14 @@ export default function FlatListings() {
     try {
       let query = supabase
         .from('flat_listings')
-        .select('*')
-        .eq('is_available', true);
+        .select('*');
 
-      // If showing only user's flats, filter by user_id
+      // If showing only user's flats, filter by user_id and show all (available/unavailable)
       if (showOnlyMyFlats && user) {
         query = query.eq('user_id', user.id);
+      } else {
+        // For general browse, only show available flats
+        query = query.eq('is_available', true);
       }
 
       // Apply sorting
@@ -128,19 +192,67 @@ export default function FlatListings() {
     }
   };
 
-  const handleWhatsAppContact = (flat: FlatListing) => {
-    const phone = flat.contact_number || flat.profiles?.phone;
-    if (phone) {
-      const message = generateFlatMessage(flat.title, flat.profiles?.full_name);
-      openWhatsApp({ phone, message });
+  const handleStatusUpdate = async (flatId: string, status: 'available' | 'unavailable') => {
+    try {
+      const updates: any = {};
+      
+      if (status === 'available') {
+        updates.is_available = true;
+      } else if (status === 'unavailable') {
+        updates.is_available = false;
+      }
+
+      const { error } = await supabase
+        .from('flat_listings')
+        .update(updates)
+        .eq('id', flatId);
+
+      if (error) throw error;
+
+      // Real-time update will handle the UI refresh automatically
+      // But we still fetch to ensure profile data is included
+      fetchFlats();
+      toast({
+        title: "Status Updated",
+        description: `Flat marked as ${status}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update flat status",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleChatContact = (flat: FlatListing) => {
-    if (flat.user_id) {
-      window.location.href = `/chat?receiver=${flat.user_id}&product=${flat.id}`;
+  const handleDeleteFlat = async (flatId: string) => {
+    if (!confirm('Are you sure you want to delete this flat listing?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('flat_listings')
+        .delete()
+        .eq('id', flatId);
+
+      if (error) throw error;
+
+      // Real-time update will handle the UI refresh automatically
+      // Flat will be removed from all users' views immediately
+      toast({
+        title: "Flat Deleted",
+        description: "Your flat listing has been removed"
+      });
+    } catch (error) {
+      console.error('Error deleting flat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete flat listing",
+        variant: "destructive"
+      });
     }
   };
+
 
   // Filter flats based on search and type
   const filteredFlats = flats.filter(flat => {
@@ -346,6 +458,17 @@ export default function FlatListings() {
                       <span>{flat.profiles?.full_name || 'Anonymous'}</span>
                     </div>
 
+                    {/* Contact Number */}
+                    {!isOwnListing && (flat.contact_number || flat.profiles?.phone) && (
+                      <a 
+                        href={`tel:${flat.contact_number || flat.profiles?.phone}`}
+                        className="flex items-center space-x-2 text-sm text-primary hover:underline"
+                      >
+                        <Phone className="w-4 h-4" />
+                        <span>{flat.contact_number || flat.profiles?.phone}</span>
+                      </a>
+                    )}
+
                     {/* Available From */}
                     {flat.available_from && (
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground">
@@ -360,29 +483,57 @@ export default function FlatListings() {
                       <span>Posted {new Date(flat.created_at).toLocaleDateString()}</span>
                     </div>
 
+                    {/* Status Badge and Actions */}
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                      {isOwnListing ? (
+                        <>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(flat.id, 'available')}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Mark as Available
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusUpdate(flat.id, 'unavailable')}>
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Mark as Unavailable
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteFlat(flat.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Flat
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <Badge variant={flat.is_available ? "default" : "secondary"}>
+                            {flat.is_available ? "Available" : "Unavailable"}
+                          </Badge>
+                        </>
+                      ) : (
+                        <>
+                          <Badge variant={flat.is_available ? "default" : "secondary"}>
+                            {flat.is_available ? "Available" : "Unavailable"}
+                          </Badge>
+                        </>
+                      )}
+                    </div>
+
                     {/* Contact Buttons */}
-                    {!isOwnListing && (
-                      <div className="flex space-x-2 pt-2">
-                        {hasWhatsApp ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleWhatsAppContact(flat)}
-                            className="flex-1"
-                          >
-                            <Phone className="w-4 h-4 mr-2" />
-                            WhatsApp
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleChatContact(flat)}
-                            className="flex-1"
-                          >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Chat
-                          </Button>
-                        )}
+                    {!isOwnListing && flat.is_available && (
+                      <div className="pt-2">
+                        <WhatsAppButton
+                          phone={flat.contact_number || flat.profiles?.phone}
+                          message={`Hi ${flat.profiles?.full_name || ''}, I saw your flat listing '${flat.title}' on CampusKart. I'm interested in learning more about it.`}
+                          productName={flat.title}
+                          size="sm"
+                          className="w-full"
+                        />
                       </div>
                     )}
                   </div>

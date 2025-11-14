@@ -1,0 +1,2 @@
+-- Disable email confirmation for easier testing
+-- This allows immediate login after signup without email verification

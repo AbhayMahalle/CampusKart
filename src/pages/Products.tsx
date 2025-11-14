@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, MessageCircle, Search, Package, Plus, Filter, IndianRupee, School, X } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Product {
   id: string;
@@ -19,6 +21,9 @@ interface Product {
   seller_phone: string | null;
   created_at: string;
   user_id: string;
+  is_available: boolean;
+  sold: boolean;
+  approved: boolean;
   profiles?: {
     full_name: string;
     college: string | null;
@@ -46,6 +51,66 @@ export default function Products() {
       fetchWishlist();
       fetchUserCollege();
     }
+
+    // Set up real-time subscription for products
+    const productsChannel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          // Handle real-time updates
+          if (payload.eventType === 'UPDATE') {
+            const updatedProduct = payload.new as Product;
+            setProducts(prev => {
+              const index = prev.findIndex(p => p.id === updatedProduct.id);
+              if (index === -1) {
+                // Product not in current list, might need to add it if it matches filters
+                if (showOnlyMyProducts && updatedProduct.user_id === user?.id) {
+                  // Fetch full product with profile if needed
+                  fetchProducts();
+                } else if (!showOnlyMyProducts && updatedProduct.approved && updatedProduct.is_available) {
+                  // Fetch full product with profile if needed
+                  fetchProducts();
+                }
+                return prev;
+              } else {
+                // Update existing product
+                const newProducts = [...prev];
+                // If product is no longer available and we're NOT showing only my products, remove it
+                // (because buyers should only see available products)
+                if (!showOnlyMyProducts && !updatedProduct.is_available) {
+                  newProducts.splice(index, 1);
+                } else {
+                  // Update the product, but we need to preserve profile data
+                  newProducts[index] = { ...updatedProduct, profiles: prev[index].profiles };
+                }
+                return newProducts;
+              }
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedProduct = payload.old as Product;
+            setProducts(prev => prev.filter(p => p.id !== deletedProduct.id));
+          } else if (payload.eventType === 'INSERT') {
+            const newProduct = payload.new as Product;
+            // Only add if it matches current filters
+            if (showOnlyMyProducts && newProduct.user_id === user?.id) {
+              fetchProducts(); // Refetch to get profile data
+            } else if (!showOnlyMyProducts && newProduct.approved && newProduct.is_available) {
+              fetchProducts(); // Refetch to get profile data
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+    };
   }, [user, showOnlyMyProducts]);
 
   const fetchUserCollege = async () => {
@@ -76,15 +141,15 @@ export default function Products() {
         .select('*');
       
       // If showing only user's products, filter by user_id and don't require approval
+      // Also show all products (available, sold, unavailable) for user's own products
       if (showOnlyMyProducts && user) {
         query = query.eq('user_id', user.id);
       } else {
-        // For general browse, only show approved products
-        query = query.eq('approved', true);
+        // For general browse, only show approved and available products
+        query = query.eq('approved', true).eq('is_available', true);
       }
       
       const { data, error } = await query
-        .eq('is_available', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -220,6 +285,72 @@ export default function Products() {
       }
     } catch (error) {
       console.error('Error in toggleWishlist:', error);
+    }
+  };
+
+  const handleStatusUpdate = async (productId: string, status: 'available' | 'sold' | 'unavailable') => {
+    try {
+      const updates: any = {};
+      
+      if (status === 'available') {
+        updates.is_available = true;
+        updates.sold = false;
+      } else if (status === 'sold') {
+        updates.sold = true;
+        updates.is_available = false;
+      } else if (status === 'unavailable') {
+        updates.is_available = false;
+        updates.sold = false;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      // Real-time update will handle the UI refresh automatically
+      // But we still fetch to ensure profile data is included
+      fetchProducts();
+      toast({
+        title: "Status Updated",
+        description: `Product marked as ${status}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      // Real-time update will handle the UI refresh automatically
+      // Product will be removed from all users' views immediately
+      toast({
+        title: "Product Deleted",
+        description: "Your product has been removed"
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
     }
   };
 
@@ -460,46 +591,85 @@ export default function Products() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleWishlist(product.id)}
-                      className="flex-1"
+                  {product.seller_phone && product.user_id !== user?.id && (
+                    <a 
+                      href={`tel:${product.seller_phone}`}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
-                    </Button>
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{product.seller_phone}</span>
+                    </a>
+                  )}
+
+                  <div className="flex gap-2">
                     {product.user_id === user?.id ? (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        disabled
-                      >
-                        Your Item
-                      </Button>
-                    ) : product.seller_phone ? (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          const message = `Hi, I'm interested in your item '${product.name}' on CampusKart.`;
-                          window.open(`https://wa.me/${product.seller_phone}?text=${encodeURIComponent(message)}`, '_blank');
-                        }}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        WhatsApp
-                      </Button>
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'available');
+                            }}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark as Available
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'sold');
+                            }}>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark as Sold
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusUpdate(product.id, 'unavailable');
+                            }}>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Mark as Unavailable
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProduct(product.id);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Product
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Badge variant={product.sold ? "destructive" : product.is_available ? "default" : "secondary"}>
+                          {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
+                        </Badge>
+                      </>
                     ) : (
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => {
-                          window.location.href = `/chat?receiver=${product.user_id}&product=${product.id}`;
-                        }}
-                      >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        Chat
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(product.id);
+                          }}
+                          className="flex-1"
+                        >
+                          <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
+                        </Button>
+                        <WhatsAppButton
+                          phone={product.seller_phone}
+                          message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                          productName={product.name}
+                          size="sm"
+                          className="flex-1"
+                        />
+                      </>
                     )}
                   </div>
                 </CardContent>

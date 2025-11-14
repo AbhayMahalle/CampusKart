@@ -1,28 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ShoppingBag, Heart, Building2, MessageCircle, TrendingUp, Package, Users, IndianRupee, ArrowRight } from 'lucide-react';
+import { Plus, ShoppingBag, Heart, Building2, TrendingUp, Package, IndianRupee, ArrowRight, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface Product {
   id: string;
   name: string;
+  title?: string;
   price: number;
   image_url: string | null;
   created_at: string;
+  is_available: boolean;
+  sold: boolean;
 }
 
 interface DashboardStats {
   totalProducts: number;
   totalWishlist: number;
   totalFlats: number;
-  totalMessages: number;
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [userProducts, setUserProducts] = useState<Product[]>([]);
@@ -30,8 +35,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalWishlist: 0,
-    totalFlats: 0,
-    totalMessages: 0
+    totalFlats: 0
   });
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -74,9 +78,8 @@ export default function Dashboard() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, image_url, created_at')
+        .select('id, name, title, price, image_url, created_at, is_available, sold')
         .eq('user_id', user.id)
-        .eq('is_available', true)
         .order('created_at', { ascending: false })
         .limit(6);
 
@@ -100,7 +103,7 @@ export default function Dashboard() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, image_url, created_at')
+        .select('id, name, price, image_url, created_at, is_available, sold')
         .eq('approved', true)
         .eq('is_available', true)
         .neq('user_id', user?.id || '')
@@ -122,21 +125,93 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      const [productsRes, wishlistRes, flatsRes, messagesRes] = await Promise.all([
-        supabase.from('products').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('wishlist').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('flat_listings').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('messages').select('id', { count: 'exact' }).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      const [productsRes, wishlistRes, flatsRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id),
+        supabase
+          .from('wishlist')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id),
+        supabase
+          .from('flat_listings')
+          .select('id', { count: 'exact' })
+          .eq('user_id', user.id)
       ]);
 
       setStats({
         totalProducts: productsRes.count || 0,
         totalWishlist: wishlistRes.count || 0,
-        totalFlats: flatsRes.count || 0,
-        totalMessages: messagesRes.count || 0
+        totalFlats: flatsRes.count || 0
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
+  const handleStatusUpdate = async (productId: string, status: 'available' | 'sold' | 'unavailable') => {
+    try {
+      const updates: any = {};
+      
+      if (status === 'available') {
+        updates.is_available = true;
+        updates.sold = false;
+      } else if (status === 'sold') {
+        updates.sold = true;
+        updates.is_available = false;
+      } else if (status === 'unavailable') {
+        updates.is_available = false;
+        updates.sold = false;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      fetchUserProducts();
+      fetchDashboardStats();
+      toast({
+        title: "Status Updated",
+        description: `Product marked as ${status}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      fetchUserProducts();
+      fetchDashboardStats();
+      toast({
+        title: "Product Deleted",
+        description: "Your product has been removed"
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
     }
   };
 
@@ -168,7 +243,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Link to="/products?filter=mine">
           <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -207,23 +282,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </Link>
-
-        <Link to="/chat">
-          <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageCircle className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.totalMessages}</div>
-              <p className="text-xs text-muted-foreground">Total conversations</p>
-            </CardContent>
-          </Card>
-        </Link>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
         <Button asChild variant="hero" size="lg" className="h-16">
           <Link to="/add-product" className="flex flex-col items-center space-y-1">
             <Plus className="w-6 h-6" />
@@ -242,13 +304,6 @@ export default function Dashboard() {
           <Link to="/flats" className="flex flex-col items-center space-y-1">
             <Building2 className="w-6 h-6" />
             <span>Find Flats</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="outline" size="lg" className="h-16">
-          <Link to="/chat" className="flex flex-col items-center space-y-1">
-            <MessageCircle className="w-6 h-6" />
-            <span>Chat</span>
           </Link>
         </Button>
       </div>
@@ -281,35 +336,71 @@ export default function Dashboard() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userProducts.map((product) => (
-                <Link key={product.id} to={`/products/${product.id}`}>
-                  <Card className="hover:shadow-card-hover transition-shadow cursor-pointer h-full">
-                    <CardHeader className="pb-2">
-                      <div className="aspect-square bg-muted rounded-lg mb-2 overflow-hidden">
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-8 h-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardTitle className="text-sm line-clamp-1">{product.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
+                <Card key={product.id} className="hover:shadow-card-hover transition-shadow h-full">
+                  <CardHeader className="pb-2">
+                    <div className="aspect-square bg-muted rounded-lg mb-2 overflow-hidden">
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.title || product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <CardTitle className="text-sm line-clamp-1">{product.title || product.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center text-lg font-semibold text-primary">
                         <IndianRupee className="w-4 h-4" />
                         {product.price.toLocaleString()}
                       </div>
+                        <Badge variant={product.sold ? "destructive" : product.is_available ? "default" : "secondary"} className="text-xs">
+                          {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
+                        </Badge>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
                         Listed {new Date(product.created_at).toLocaleDateString()}
                       </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MoreVertical className="w-3 h-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/products/${product.id}`)}>
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'available')}>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Mark as Available
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'sold')}>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Mark as Sold
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'unavailable')}>
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Mark as Unavailable
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

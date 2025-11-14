@@ -90,13 +90,26 @@ export default function Profile() {
     e.preventDefault();
     if (!user || !profile) return;
 
+    // Validate phone number
+    const phoneRegex = /^\+?[1-9]\d{9,14}$/;
+    const cleanedPhone = formData.phone.replace(/\s/g, '');
+    
+    if (!phoneRegex.test(cleanedPhone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number with country code (e.g., +919876543210)",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,
-          phone: formData.phone || null,
+          phone: cleanedPhone,
           college: formData.college || null,
           avatar_url: formData.avatar_url || null,
         })
@@ -257,18 +270,21 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label htmlFor="phone">
                   <Phone className="w-4 h-4 inline mr-2" />
-                  Phone Number (Optional)
+                  WhatsApp Number *
                 </Label>
                 <Input
                   id="phone"
                   name="phone"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+919876543210"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  required
+                  pattern="^\+?[1-9]\d{9,14}$"
+                  title="Enter phone number with country code (e.g., +919876543210)"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Add your phone number to enable WhatsApp messaging for your listings
+                  Required - Include country code (e.g., +91 for India). Used for WhatsApp communication.
                 </p>
               </div>
 
@@ -326,25 +342,17 @@ export default function Profile() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Privacy Settings</CardTitle>
+              <CardTitle>Communication</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">WhatsApp Integration</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {profile.phone 
-                      ? 'Users can contact you via WhatsApp for your listings'
-                      : 'Add a phone number to enable WhatsApp messaging'
-                    }
-                  </p>
-                </div>
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">In-App Chat</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Users can always contact you through our secure in-app messaging system
-                  </p>
-                </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium text-sm mb-2">WhatsApp Contact</h4>
+                <p className="text-xs text-muted-foreground">
+                  {profile.phone 
+                    ? 'Buyers and renters will contact you via WhatsApp'
+                    : 'Please add your WhatsApp number to enable communication'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>

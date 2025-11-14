@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { ShoppingBag, Users, MessageCircle, Building2, Loader2 } from 'lucide-react';
 import heroImage from '@/assets/hero-image.jpg';
 
@@ -45,10 +46,13 @@ export default function Landing() {
       } else {
         toast({
           title: isLogin ? "Welcome back!" : "Account created successfully!",
-          description: isLogin ? "Redirecting to your dashboard..." : "Please check your email to verify your account.",
+          description: isLogin ? "Redirecting to dashboard..." : "You can now sign in.",
         });
+        
         if (isLogin) {
-          navigate('/dashboard');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
         }
       }
     } catch (error) {
@@ -225,7 +229,7 @@ export default function Landing() {
 
                     <Separator className="my-6" />
 
-                    <div className="text-center">
+                    <div className="text-center space-y-3">
                       <p className="text-sm text-muted-foreground mb-4">
                         {isLogin ? "Don't have an account?" : "Already have an account?"}
                       </p>

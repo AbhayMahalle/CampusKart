@@ -4,21 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  ArrowLeft, 
-  Heart, 
-  MessageCircle, 
-  Phone, 
-  User, 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  ArrowLeft,
+  Heart,
+  User,
   Calendar,
   IndianRupee,
   Package,
   Tag,
-  MapPin,
-  School
+  School,
+  Phone,
+  MoreVertical,
+  Trash2,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface Product {
@@ -59,6 +63,39 @@ export default function ProductDetail() {
   useEffect(() => {
     if (productId) {
       fetchProductDetails();
+    }
+
+    // Set up real-time subscription for product updates
+    if (productId) {
+      const productChannel = supabase
+        .channel(`product-${productId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `id=eq.${productId}`
+          },
+          (payload) => {
+            if (payload.eventType === 'UPDATE') {
+              const updatedProduct = payload.new as Product;
+              setProduct(updatedProduct);
+            } else if (payload.eventType === 'DELETE') {
+              toast({
+                title: "Product Deleted",
+                description: "This product has been removed",
+                variant: "destructive",
+              });
+              navigate('/products');
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(productChannel);
+      };
     }
   }, [productId]);
 
@@ -196,19 +233,70 @@ export default function ProductDetail() {
     }
   };
 
-  const handleWhatsAppContact = () => {
-    const phone = product?.seller_phone || seller?.phone;
-    if (phone) {
-      const message = `Hi, I'm interested in your item '${product?.name}' on CampusKart.`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  const handleStatusUpdate = async (status: 'available' | 'sold' | 'unavailable') => {
+    try {
+      const updates: any = {};
+      
+      if (status === 'available') {
+        updates.is_available = true;
+        updates.sold = false;
+      } else if (status === 'sold') {
+        updates.sold = true;
+        updates.is_available = false;
+      } else if (status === 'unavailable') {
+        updates.is_available = false;
+        updates.sold = false;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', productId!);
+
+      if (error) throw error;
+
+      fetchProductDetails();
+      toast({
+        title: "Status Updated",
+        description: `Product marked as ${status}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleInAppChat = () => {
-    if (product && seller) {
-      window.location.href = `/chat?receiver=${seller.user_id}&product=${product.id}`;
+  const handleDeleteProduct = async () => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId!);
+
+      if (error) throw error;
+
+      toast({
+        title: "Product Deleted",
+        description: "Your product has been removed"
+      });
+      
+      navigate('/products');
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
     }
   };
+
 
   if (loading) {
     return (
@@ -246,7 +334,6 @@ export default function ProductDetail() {
   }
 
   const isOwnProduct = product.user_id === user?.id;
-  const hasWhatsApp = Boolean(product.seller_phone || seller?.phone);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -343,74 +430,92 @@ export default function ProductDetail() {
                   Listed {new Date(product.created_at).toLocaleDateString()}
                 </span>
               </div>
+              {product.seller_phone && (
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <a 
+                    href={`tel:${product.seller_phone}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {product.seller_phone}
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Action Buttons */}
-          {!isOwnProduct && product.is_available && !product.sold && (
-            <div className="space-y-3">
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={toggleWishlist}
-                  disabled={addingToWishlist}
-                  className="flex-1"
-                >
-                  <Heart className={`w-4 h-4 mr-2 ${isInWishlist ? 'fill-current' : ''}`} />
-                  {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                </Button>
-              </div>
-              
-              <div className="flex gap-3">
-                {hasWhatsApp ? (
-                  <Button
-                    onClick={handleWhatsAppContact}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    <Phone className="w-4 h-4 mr-2" />
-                    Contact on WhatsApp
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleInAppChat}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Chat with Seller
-                  </Button>
+          <div className="flex gap-2">
+            {isOwnProduct ? (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex-1">
+                      <MoreVertical className="w-4 h-4 mr-2" />
+                      Manage Product
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('available')}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Mark as Available
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('sold')}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Mark as Sold
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('unavailable')}>
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Mark as Unavailable
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={handleDeleteProduct}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Product
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Badge variant={product.sold ? "destructive" : product.is_available ? "default" : "secondary"} className="h-10 px-4 flex items-center">
+                  {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
+                </Badge>
+              </>
+            ) : (
+              <>
+                {product.is_available && !product.sold && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={toggleWishlist}
+                      disabled={addingToWishlist}
+                    >
+                      <Heart
+                        className={`w-4 h-4 mr-2 ${isInWishlist ? 'fill-red-500 text-red-500' : ''}`}
+                      />
+                      {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                    </Button>
+                    <WhatsAppButton
+                      phone={product.seller_phone || ''}
+                      message={`Hi, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                      productName={product.name}
+                      variant="default"
+                      size="lg"
+                      className="flex-1"
+                    />
+                  </>
                 )}
-              </div>
-
-              {hasWhatsApp && (
-                <Button
-                  variant="outline"
-                  onClick={handleInAppChat}
-                  className="w-full"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Or chat in app
-                </Button>
-              )}
-            </div>
-          )}
-
-          {isOwnProduct && (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-center text-muted-foreground">
-                This is your product listing
-              </p>
-            </div>
-          )}
-
-          {(product.sold || !product.is_available) && !isOwnProduct && (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-center text-muted-foreground">
-                This product is no longer available
-              </p>
-            </div>
-          )}
+                {(product.sold || !product.is_available) && (
+                  <div className="w-full p-4 bg-muted rounded-lg">
+                    <p className="text-center text-muted-foreground">
+                      This product is no longer available
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

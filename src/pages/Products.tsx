@@ -23,6 +23,7 @@ interface Product {
   user_id: string;
   is_available: boolean;
   sold: boolean;
+  approved: boolean;
   profiles?: {
     full_name: string;
     college: string | null;
@@ -50,6 +51,66 @@ export default function Products() {
       fetchWishlist();
       fetchUserCollege();
     }
+
+    // Set up real-time subscription for products
+    const productsChannel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          // Handle real-time updates
+          if (payload.eventType === 'UPDATE') {
+            const updatedProduct = payload.new as Product;
+            setProducts(prev => {
+              const index = prev.findIndex(p => p.id === updatedProduct.id);
+              if (index === -1) {
+                // Product not in current list, might need to add it if it matches filters
+                if (showOnlyMyProducts && updatedProduct.user_id === user?.id) {
+                  // Fetch full product with profile if needed
+                  fetchProducts();
+                } else if (!showOnlyMyProducts && updatedProduct.approved && updatedProduct.is_available) {
+                  // Fetch full product with profile if needed
+                  fetchProducts();
+                }
+                return prev;
+              } else {
+                // Update existing product
+                const newProducts = [...prev];
+                // If product is no longer available and we're NOT showing only my products, remove it
+                // (because buyers should only see available products)
+                if (!showOnlyMyProducts && !updatedProduct.is_available) {
+                  newProducts.splice(index, 1);
+                } else {
+                  // Update the product, but we need to preserve profile data
+                  newProducts[index] = { ...updatedProduct, profiles: prev[index].profiles };
+                }
+                return newProducts;
+              }
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedProduct = payload.old as Product;
+            setProducts(prev => prev.filter(p => p.id !== deletedProduct.id));
+          } else if (payload.eventType === 'INSERT') {
+            const newProduct = payload.new as Product;
+            // Only add if it matches current filters
+            if (showOnlyMyProducts && newProduct.user_id === user?.id) {
+              fetchProducts(); // Refetch to get profile data
+            } else if (!showOnlyMyProducts && newProduct.approved && newProduct.is_available) {
+              fetchProducts(); // Refetch to get profile data
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+    };
   }, [user, showOnlyMyProducts]);
 
   const fetchUserCollege = async () => {
@@ -80,15 +141,15 @@ export default function Products() {
         .select('*');
       
       // If showing only user's products, filter by user_id and don't require approval
+      // Also show all products (available, sold, unavailable) for user's own products
       if (showOnlyMyProducts && user) {
         query = query.eq('user_id', user.id);
       } else {
-        // For general browse, only show approved products
-        query = query.eq('approved', true);
+        // For general browse, only show approved and available products
+        query = query.eq('approved', true).eq('is_available', true);
       }
       
       const { data, error } = await query
-        .eq('is_available', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -249,6 +310,8 @@ export default function Products() {
 
       if (error) throw error;
 
+      // Real-time update will handle the UI refresh automatically
+      // But we still fetch to ensure profile data is included
       fetchProducts();
       toast({
         title: "Status Updated",
@@ -275,7 +338,8 @@ export default function Products() {
 
       if (error) throw error;
 
-      fetchProducts();
+      // Real-time update will handle the UI refresh automatically
+      // Product will be removed from all users' views immediately
       toast({
         title: "Product Deleted",
         description: "Your product has been removed"

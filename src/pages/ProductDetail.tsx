@@ -64,6 +64,39 @@ export default function ProductDetail() {
     if (productId) {
       fetchProductDetails();
     }
+
+    // Set up real-time subscription for product updates
+    if (productId) {
+      const productChannel = supabase
+        .channel(`product-${productId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `id=eq.${productId}`
+          },
+          (payload) => {
+            if (payload.eventType === 'UPDATE') {
+              const updatedProduct = payload.new as Product;
+              setProduct(updatedProduct);
+            } else if (payload.eventType === 'DELETE') {
+              toast({
+                title: "Product Deleted",
+                description: "This product has been removed",
+                variant: "destructive",
+              });
+              navigate('/products');
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(productChannel);
+      };
+    }
   }, [productId]);
 
   useEffect(() => {

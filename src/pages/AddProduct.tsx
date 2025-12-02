@@ -53,7 +53,9 @@ export default function AddProduct() {
           price: parseFloat(formData.price),
           category: formData.category || null,
           image_url: formData.image_url || null,
-          seller_phone: cleanedPhone
+          seller_phone: cleanedPhone,
+          approved: true,
+          is_available: true
         });
 
       if (error) {

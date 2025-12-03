@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,8 @@ import {
   MoreVertical,
   Trash2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Pencil
 } from 'lucide-react';
 
 interface FlatListing {
@@ -55,6 +56,7 @@ type SortOption = 'newest' | 'oldest' | 'rent_low' | 'rent_high';
 
 export default function FlatListings() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [flats, setFlats] = useState<FlatListing[]>([]);
@@ -476,6 +478,10 @@ export default function FlatListings() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/edit-flat/${flat.id}`)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Edit Flat
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusUpdate(flat.id, 'available')}>
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Mark as Available

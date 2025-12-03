@@ -8,7 +8,7 @@ import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Product {
@@ -594,6 +594,13 @@ export default function Products() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/edit-product/${product.id}`);
+                            }}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit Product
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
                               handleStatusUpdate(product.id, 'available');

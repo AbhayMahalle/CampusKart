@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ShoppingBag, Heart, Building2, TrendingUp, Package, IndianRupee, ArrowRight, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, ShoppingBag, Heart, Building2, TrendingUp, Package, IndianRupee, ArrowRight, MoreVertical, Trash2, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
@@ -376,6 +376,10 @@ export default function Dashboard() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => navigate(`/products/${product.id}`)}>
                             View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/edit-product/${product.id}`)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit Product
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'available')}>
                             <CheckCircle className="w-4 h-4 mr-2" />

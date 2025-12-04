@@ -122,13 +122,15 @@ export default function Products() {
         .from('products')
         .select('*');
 
-      // If showing only user's products, filter by user_id and don't require approval
-      // Also show all products (available, sold, unavailable) for user's own products
+      // If showing only user's products, filter by user_id and show all statuses
       if (showOnlyMyProducts && user) {
         query = query.eq('user_id', user.id);
       } else {
-        // For general browse, show all approved products so users can see status
-        query = query.eq('approved', true);
+        // For public view: only show approved, available, and not sold products
+        query = query
+          .eq('approved', true)
+          .eq('is_available', true)
+          .eq('sold', false);
       }
 
       const { data, error } = await query

@@ -8,7 +8,7 @@ import { WhatsAppButton } from '@/components/ui/whatsapp-button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Heart, Search, Package, Plus, Filter, IndianRupee, School, X, Phone, MoreVertical, Trash2, CheckCircle, XCircle, Pencil } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Product {
@@ -69,26 +69,13 @@ export default function Products() {
             setProducts(prev => {
               const index = prev.findIndex(p => p.id === updatedProduct.id);
               if (index === -1) {
-                // Product not in current list, might need to add it if it matches filters
-                if (showOnlyMyProducts && updatedProduct.user_id === user?.id) {
-                  // Fetch full product with profile if needed
-                  fetchProducts();
-                } else if (!showOnlyMyProducts && updatedProduct.approved && updatedProduct.is_available) {
-                  // Fetch full product with profile if needed
-                  fetchProducts();
-                }
+                // Product not in current list, fetch to include it
+                fetchProducts();
                 return prev;
               } else {
-                // Update existing product
+                // Update existing product, preserve profile data
                 const newProducts = [...prev];
-                // If product is no longer available and we're NOT showing only my products, remove it
-                // (because buyers should only see available products)
-                if (!showOnlyMyProducts && !updatedProduct.is_available) {
-                  newProducts.splice(index, 1);
-                } else {
-                  // Update the product, but we need to preserve profile data
-                  newProducts[index] = { ...updatedProduct, profiles: prev[index].profiles };
-                }
+                newProducts[index] = { ...updatedProduct, profiles: prev[index].profiles };
                 return newProducts;
               }
             });
@@ -96,13 +83,8 @@ export default function Products() {
             const deletedProduct = payload.old as Product;
             setProducts(prev => prev.filter(p => p.id !== deletedProduct.id));
           } else if (payload.eventType === 'INSERT') {
-            const newProduct = payload.new as Product;
-            // Only add if it matches current filters
-            if (showOnlyMyProducts && newProduct.user_id === user?.id) {
-              fetchProducts(); // Refetch to get profile data
-            } else if (!showOnlyMyProducts && newProduct.approved && newProduct.is_available) {
-              fetchProducts(); // Refetch to get profile data
-            }
+            // Refetch to get profile data for new product
+            fetchProducts();
           }
         }
       )
@@ -145,8 +127,8 @@ export default function Products() {
       if (showOnlyMyProducts && user) {
         query = query.eq('user_id', user.id);
       } else {
-        // For general browse, only show approved and available products
-        query = query.eq('approved', true).eq('is_available', true);
+        // For general browse, show all approved products so users can see status
+        query = query.eq('approved', true);
       }
       
       const { data, error } = await query
@@ -614,6 +596,13 @@ export default function Products() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
+                              navigate(`/edit-product/${product.id}`);
+                            }}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit Product
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
                               handleStatusUpdate(product.id, 'available');
                             }}>
                               <CheckCircle className="w-4 h-4 mr-2" />
@@ -651,24 +640,34 @@ export default function Products() {
                       </>
                     ) : (
                       <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleWishlist(product.id);
-                          }}
-                          className="flex-1"
-                        >
-                          <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
-                        </Button>
-                        <WhatsAppButton
-                          phone={product.seller_phone}
-                          message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
-                          productName={product.name}
-                          size="sm"
-                          className="flex-1"
-                        />
+                        {/* Show status badge to buyers */}
+                        {(product.sold || !product.is_available) && (
+                          <Badge variant={product.sold ? "destructive" : "secondary"} className="mr-2">
+                            {product.sold ? "Sold" : "Unavailable"}
+                          </Badge>
+                        )}
+                        {product.is_available && !product.sold && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleWishlist(product.id);
+                              }}
+                              className="flex-1"
+                            >
+                              <Heart className={`w-4 h-4 ${wishlistItems.has(product.id) ? 'fill-current' : ''}`} />
+                            </Button>
+                            <WhatsAppButton
+                              phone={product.seller_phone}
+                              message={`Hi ${product.profiles?.full_name || ''}, I'm interested in your item '${product.name}' on CampusKart. Is it still available?`}
+                              productName={product.name}
+                              size="sm"
+                              className="flex-1"
+                            />
+                          </>
+                        )}
                       </>
                     )}
                   </div>

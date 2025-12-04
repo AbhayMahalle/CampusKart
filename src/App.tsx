@@ -10,7 +10,9 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import AddProduct from "./pages/AddProduct";
+import EditProduct from "./pages/EditProduct";
 import AddFlat from "./pages/AddFlat";
+import EditFlat from "./pages/EditFlat";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
 import FlatListings from "./pages/FlatListings";
@@ -91,6 +93,11 @@ function AppRoutes() {
           <AddProduct />
         </ProtectedRoute>
       } />
+      <Route path="/edit-product/:productId" element={
+        <ProtectedRoute>
+          <EditProduct />
+        </ProtectedRoute>
+      } />
       <Route path="/wishlist" element={
         <ProtectedRoute>
           <Wishlist />
@@ -104,6 +111,11 @@ function AppRoutes() {
       <Route path="/add-flat" element={
         <ProtectedRoute>
           <AddFlat />
+        </ProtectedRoute>
+      } />
+      <Route path="/edit-flat/:flatId" element={
+        <ProtectedRoute>
+          <EditFlat />
         </ProtectedRoute>
       } />
       <Route path="/profile" element={

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,8 @@ import {
   MoreVertical,
   Trash2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Pencil
 } from 'lucide-react';
 
 interface FlatListing {
@@ -55,6 +56,7 @@ type SortOption = 'newest' | 'oldest' | 'rent_low' | 'rent_high';
 
 export default function FlatListings() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [flats, setFlats] = useState<FlatListing[]>([]);
@@ -86,24 +88,13 @@ export default function FlatListings() {
             setFlats(prev => {
               const index = prev.findIndex(f => f.id === updatedFlat.id);
               if (index === -1) {
-                // Flat not in current list, might need to add it if it matches filters
-                if (showOnlyMyFlats && updatedFlat.user_id === user?.id && updatedFlat.is_available) {
-                  fetchFlats(); // Refetch to get profile data
-                } else if (!showOnlyMyFlats && updatedFlat.is_available) {
-                  fetchFlats(); // Refetch to get profile data
-                }
+                // Flat not in current list, fetch to get profile data
+                fetchFlats();
                 return prev;
               } else {
-                // Update existing flat
+                // Update existing flat, preserve profile data
                 const newFlats = [...prev];
-                // If flat is no longer available and we're NOT showing only my flats, remove it
-                // (because buyers should only see available flats)
-                if (!showOnlyMyFlats && !updatedFlat.is_available) {
-                  newFlats.splice(index, 1);
-                } else {
-                  // Update the flat, but we need to preserve profile data
-                  newFlats[index] = { ...updatedFlat, profiles: prev[index].profiles };
-                }
+                newFlats[index] = { ...updatedFlat, profiles: prev[index].profiles };
                 return newFlats;
               }
             });
@@ -111,13 +102,8 @@ export default function FlatListings() {
             const deletedFlat = payload.old as FlatListing;
             setFlats(prev => prev.filter(f => f.id !== deletedFlat.id));
           } else if (payload.eventType === 'INSERT') {
-            const newFlat = payload.new as FlatListing;
-            // Only add if it matches current filters
-            if (showOnlyMyFlats && newFlat.user_id === user?.id && newFlat.is_available) {
-              fetchFlats(); // Refetch to get profile data
-            } else if (!showOnlyMyFlats && newFlat.is_available) {
-              fetchFlats(); // Refetch to get profile data
-            }
+            // Refetch to get profile data for new flat
+            fetchFlats();
           }
         }
       )
@@ -138,10 +124,8 @@ export default function FlatListings() {
       // If showing only user's flats, filter by user_id and show all (available/unavailable)
       if (showOnlyMyFlats && user) {
         query = query.eq('user_id', user.id);
-      } else {
-        // For general browse, only show available flats
-        query = query.eq('is_available', true);
       }
+      // For general browse, show all flats so users can see availability status
 
       // Apply sorting
       switch (sortBy) {
@@ -494,6 +478,10 @@ export default function FlatListings() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/edit-flat/${flat.id}`)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Edit Flat
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleStatusUpdate(flat.id, 'available')}>
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Mark as Available

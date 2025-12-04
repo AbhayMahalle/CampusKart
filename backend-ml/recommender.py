@@ -9,8 +9,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 # ===============================================================
 #  SUPABASE CONNECTION
 # ===============================================================
-SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co"
-SUPABASE_SERVICE_KEY = "YOUR_SERVICE_ROLE_KEY"   
+SUPABASE_URL = "https://lwkswhslkxweneheackj.supabase.co"
+SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3a3N3aHNsa3h3ZW5laGVhY2tqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjQwMTAzNSwiZXhwIjoyMDcxOTc3MDM1fQ.w_8ugiGXUbBGtK8R-uNzh63a0RwWtKHSxvS07Za6fB0"   
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 

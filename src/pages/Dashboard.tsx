@@ -5,7 +5,21 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, ShoppingBag, Heart, Building2, TrendingUp, Package, IndianRupee, ArrowRight, MoreVertical, Trash2, CheckCircle, XCircle, Pencil } from 'lucide-react';
+import {
+  Plus,
+  ShoppingBag,
+  Heart,
+  Building2,
+  TrendingUp,
+  Package,
+  IndianRupee,
+  ArrowRight,
+  MoreVertical,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Pencil
+} from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
@@ -30,6 +44,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
   const [userProducts, setUserProducts] = useState<Product[]>([]);
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -37,6 +52,7 @@ export default function Dashboard() {
     totalWishlist: 0,
     totalFlats: 0
   });
+
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -44,31 +60,60 @@ export default function Dashboard() {
     if (user) {
       Promise.all([
         fetchUserProducts(),
-        fetchRecommendedProducts(),
+        fetchMLorFallback(),
         fetchDashboardStats(),
         fetchUserProfile()
       ]).finally(() => setLoading(false));
     }
   }, [user]);
 
+  const fetchMLorFallback = async () => {
+    const last = localStorage.getItem("lastSearch");
+
+    if (last) {
+      try {
+        const res = await fetch("http://localhost:5001/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: last })
+        });
+
+        const mlData = await res.json();
+
+        if (Array.isArray(mlData) && mlData.length > 0) {
+          setRecommendedProducts(mlData);
+          return;
+        }
+      } catch (err) {
+        console.error("ML API error:", err);
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, price, image_url, created_at, is_available, sold")
+      .eq("approved", true)
+      .eq("is_available", true)
+      .limit(6);
+
+    if (!error && data) setRecommendedProducts(data);
+  };
+
   const fetchUserProfile = async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-        return;
-      }
+      if (error && error.code !== "PGRST116") return;
 
       setUserProfile(data);
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -77,47 +122,17 @@ export default function Dashboard() {
 
     try {
       const { data, error } = await supabase
-        .from('products')
-        .select('id, name, title, price, image_url, created_at, is_available, sold')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .from("products")
+        .select("id, name, title, price, image_url, created_at, is_available, sold")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
         .limit(6);
 
-      if (error) {
-        console.error('Error fetching products:', error);
-        toast({
-          title: "Error loading products",
-          description: "Could not load your products.",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) return;
 
       setUserProducts(data || []);
-    } catch (error) {
-      console.error('Error in fetchUserProducts:', error);
-    }
-  };
-
-  const fetchRecommendedProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, price, image_url, created_at, is_available, sold')
-        .eq('approved', true)
-        .eq('is_available', true)
-        .neq('user_id', user?.id || '')
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (error) {
-        console.error('Error fetching recommended products:', error);
-        return;
-      }
-
-      setRecommendedProducts(data || []);
-    } catch (error) {
-      console.error('Error in fetchRecommendedProducts:', error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -126,18 +141,9 @@ export default function Dashboard() {
 
     try {
       const [productsRes, wishlistRes, flatsRes] = await Promise.all([
-        supabase
-          .from('products')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id),
-        supabase
-          .from('wishlist')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id),
-        supabase
-          .from('flat_listings')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id)
+        supabase.from("products").select("id", { count: "exact" }).eq("user_id", user.id),
+        supabase.from("wishlist").select("id", { count: "exact" }).eq("user_id", user.id),
+        supabase.from("flat_listings").select("id", { count: "exact" }).eq("user_id", user.id)
       ]);
 
       setStats({
@@ -145,73 +151,57 @@ export default function Dashboard() {
         totalWishlist: wishlistRes.count || 0,
         totalFlats: flatsRes.count || 0
       });
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleStatusUpdate = async (productId: string, status: 'available' | 'sold' | 'unavailable') => {
     try {
       const updates: any = {};
-      
-      if (status === 'available') {
+
+      if (status === "available") {
         updates.is_available = true;
         updates.sold = false;
-      } else if (status === 'sold') {
+      } else if (status === "sold") {
         updates.sold = true;
         updates.is_available = false;
-      } else if (status === 'unavailable') {
+      } else {
         updates.is_available = false;
         updates.sold = false;
       }
 
       const { error } = await supabase
-        .from('products')
+        .from("products")
         .update(updates)
-        .eq('id', productId);
+        .eq("id", productId);
 
       if (error) throw error;
 
       fetchUserProducts();
       fetchDashboardStats();
-      toast({
-        title: "Status Updated",
-        description: `Product marked as ${status}`
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update product status",
-        variant: "destructive"
-      });
+
+      toast({ title: "Status Updated", description: `Product marked as ${status}` });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to update product status", variant: "destructive" });
     }
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
+      const { error } = await supabase.from("products").delete().eq("id", productId);
 
       if (error) throw error;
 
       fetchUserProducts();
       fetchDashboardStats();
-      toast({
-        title: "Product Deleted",
-        description: "Your product has been removed"
-      });
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete product",
-        variant: "destructive"
-      });
+      toast({ title: "Product Deleted", description: "Your product has been removed" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to delete product", variant: "destructive" });
     }
   };
 
@@ -232,22 +222,19 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          Welcome back, {userProfile?.full_name || user?.email?.split('@')[0]}! 👋
+          Welcome back, {userProfile?.full_name || user?.email?.split("@")[0]}! 👋
         </h1>
-        <p className="text-muted-foreground">
-          Here's what's happening with your CampusKart account.
-        </p>
+        <p className="text-muted-foreground">Here's what's happening with your CampusKart account.</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Link to="/products?filter=mine">
-          <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Your Products</CardTitle>
+          <Card className="bg-gradient-card hover:shadow-card-hover cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm">Your Products</CardTitle>
               <Package className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -258,9 +245,9 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/wishlist">
-          <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Wishlist</CardTitle>
+          <Card className="bg-gradient-card hover:shadow-card-hover cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm">Wishlist</CardTitle>
               <Heart className="h-4 w-4 text-accent" />
             </CardHeader>
             <CardContent>
@@ -271,9 +258,9 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/flats?filter=mine">
-          <Card className="bg-gradient-card hover:shadow-card-hover transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Flat Listings</CardTitle>
+          <Card className="bg-gradient-card hover:shadow-card-hover cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm">Flat Listings</CardTitle>
               <Building2 className="h-4 w-4 text-secondary" />
             </CardHeader>
             <CardContent>
@@ -292,14 +279,14 @@ export default function Dashboard() {
             <span>Add Product</span>
           </Link>
         </Button>
-        
+
         <Button asChild variant="accent" size="lg" className="h-16">
           <Link to="/products" className="flex flex-col items-center space-y-1">
             <ShoppingBag className="w-6 h-6" />
             <span>Browse Products</span>
           </Link>
         </Button>
-        
+
         <Button asChild variant="secondary" size="lg" className="h-16">
           <Link to="/flats" className="flex flex-col items-center space-y-1">
             <Building2 className="w-6 h-6" />
@@ -307,7 +294,6 @@ export default function Dashboard() {
           </Link>
         </Button>
       </div>
-
       {/* Recent Products */}
       <Card>
         <CardHeader>
@@ -324,6 +310,7 @@ export default function Dashboard() {
             </Button>
           </div>
         </CardHeader>
+
         <CardContent>
           {userProducts.length === 0 ? (
             <div className="text-center py-8">
@@ -336,15 +323,11 @@ export default function Dashboard() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {userProducts.map((product) => (
-                <Card key={product.id} className="hover:shadow-card-hover transition-shadow h-full">
+                <Card key={product.id} className="hover:shadow-card-hover">
                   <CardHeader className="pb-2">
                     <div className="aspect-square bg-muted rounded-lg mb-2 overflow-hidden">
                       {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.title || product.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={product.image_url} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Package className="w-8 h-8 text-muted-foreground" />
@@ -353,47 +336,65 @@ export default function Dashboard() {
                     </div>
                     <CardTitle className="text-sm line-clamp-1">{product.title || product.name}</CardTitle>
                   </CardHeader>
+
                   <CardContent className="pt-0">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center text-lg font-semibold text-primary">
                         <IndianRupee className="w-4 h-4" />
                         {product.price.toLocaleString()}
                       </div>
-                        <Badge variant={product.sold ? "destructive" : product.is_available ? "default" : "secondary"} className="text-xs">
-                          {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
-                        </Badge>
+                      <Badge
+                        variant={
+                          product.sold
+                            ? "destructive"
+                            : product.is_available
+                              ? "default"
+                              : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {product.sold ? "Sold" : product.is_available ? "Available" : "Unavailable"}
+                      </Badge>
                     </div>
+
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
                         Listed {new Date(product.created_at).toLocaleDateString()}
                       </p>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm">
                             <MoreVertical className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
+
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => navigate(`/products/${product.id}`)}>
                             View Details
                           </DropdownMenuItem>
+
                           <DropdownMenuItem onClick={() => navigate(`/edit-product/${product.id}`)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit Product
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'available')}>
+
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, "available")}>
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Mark as Available
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'sold')}>
+
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, "sold")}>
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Mark as Sold
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, 'unavailable')}>
+
+                          <DropdownMenuItem onClick={() => handleStatusUpdate(product.id, "unavailable")}>
                             <XCircle className="w-4 h-4 mr-2" />
                             Mark as Unavailable
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+
+                          <DropdownMenuItem
                             onClick={() => handleDeleteProduct(product.id)}
                             className="text-destructive"
                           >
@@ -411,64 +412,58 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Recommended Products */}
-      {recommendedProducts.length > 0 && (
-        <Card className="mt-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <ShoppingBag className="w-5 h-5 text-accent" />
-                  <span>Recommended for You</span>
-                </CardTitle>
-                <CardDescription>Products you might be interested in</CardDescription>
-              </div>
-              <Button asChild variant="outline">
-                <Link to="/products">
-                  View All
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </Button>
+      {/* Recommended Products (ML + fallback) */}
+      <Card className="mt-8">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <ShoppingBag className="w-5 h-5 text-accent" />
+                <span>Recommended for You</span>
+              </CardTitle>
+              <CardDescription>Products you might be interested in</CardDescription>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <div className="flex space-x-4 pb-4">
-                {recommendedProducts.map((product) => (
-                  <Link 
-                    key={product.id} 
-                    to={`/products/${product.id}`}
-                    className="flex-shrink-0 w-48"
-                  >
-                    <Card className="hover:shadow-card-hover transition-shadow h-full">
-                      <div className="aspect-square bg-muted rounded-t-lg overflow-hidden">
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-8 h-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-3">
-                        <CardTitle className="text-sm line-clamp-2 mb-2 h-10">{product.name}</CardTitle>
-                        <div className="flex items-center text-base font-semibold text-primary">
-                          <IndianRupee className="w-4 h-4" />
-                          {product.price.toLocaleString()}
+
+            <Button asChild variant="outline">
+              <Link to="/products">
+                View All
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <div className="overflow-x-auto">
+            <div className="flex space-x-4 pb-4">
+              {recommendedProducts.map((product) => (
+                <Link key={product.id} to={`/products/${product.id}`} className="flex-shrink-0 w-48">
+                  <Card className="hover:shadow-card-hover h-full">
+                    <div className="aspect-square bg-muted rounded-t-lg overflow-hidden">
+                      {product.image_url ? (
+                        <img src={product.image_url} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-8 h-8 text-muted-foreground" />
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+                      )}
+                    </div>
+
+                    <CardContent className="p-3">
+                      <CardTitle className="text-sm line-clamp-2 mb-2 h-10">{product.name}</CardTitle>
+                      <div className="flex items-center text-base font-semibold text-primary">
+                        <IndianRupee className="w-4 h-4" />
+                        {product.price.toLocaleString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

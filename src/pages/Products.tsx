@@ -121,7 +121,7 @@ export default function Products() {
       let query = supabase
         .from('products')
         .select('*');
-      
+
       // If showing only user's products, filter by user_id and don't require approval
       // Also show all products (available, sold, unavailable) for user's own products
       if (showOnlyMyProducts && user) {
@@ -130,7 +130,7 @@ export default function Products() {
         // For general browse, show all approved products so users can see status
         query = query.eq('approved', true);
       }
-      
+
       const { data, error } = await query
         .order('created_at', { ascending: false });
 
@@ -162,7 +162,7 @@ export default function Products() {
         }));
 
         setProducts(productsWithProfiles);
-        
+
         // Extract unique categories
         const categories = [...new Set(
           data
@@ -273,7 +273,7 @@ export default function Products() {
   const handleStatusUpdate = async (productId: string, status: 'available' | 'sold' | 'unavailable') => {
     try {
       const updates: any = {};
-      
+
       if (status === 'available') {
         updates.is_available = true;
         updates.sold = false;
@@ -358,15 +358,15 @@ export default function Products() {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCampus = !filterByCampus || 
+
+    const matchesCampus = !filterByCampus ||
       (userCollege && product.profiles?.college === userCollege);
-    
-    const matchesCategory = selectedCategories.size === 0 || 
+
+    const matchesCategory = selectedCategories.size === 0 ||
       (product.category && selectedCategories.has(product.category));
-    
+
     const matchesOwnership = !showOnlyMyProducts || product.user_id === user?.id;
-    
+
     return matchesSearch && matchesCampus && matchesCategory && matchesOwnership;
   });
 
@@ -396,8 +396,8 @@ export default function Products() {
             {showOnlyMyProducts ? 'Your Products' : 'Browse Products'}
           </h1>
           <p className="text-muted-foreground">
-            {showOnlyMyProducts 
-              ? 'Manage your product listings' 
+            {showOnlyMyProducts
+              ? 'Manage your product listings'
               : 'Discover amazing deals from fellow students'
             }
           </p>
@@ -417,11 +417,20 @@ export default function Products() {
           <Input
             placeholder="Search products, categories..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchQuery(value);
+              localStorage.setItem("lastSearch", value);
+            }}
+            // onKeyDown={(e) => {
+            //   if (e.key === 'Enter') {
+            //     localStorage.setItem("lastSearch", searchQuery);
+            //   }
+            // }}
             className="pl-10 py-6 text-base"
           />
         </div>
-        
+
         {/* Filters Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -491,8 +500,8 @@ export default function Products() {
             {searchQuery ? 'No products found' : 'No products available'}
           </h3>
           <p className="text-muted-foreground mb-6">
-            {searchQuery 
-              ? 'Try adjusting your search terms.' 
+            {searchQuery
+              ? 'Try adjusting your search terms.'
               : 'Be the first to list a product!'
             }
           </p>
@@ -510,19 +519,19 @@ export default function Products() {
               {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
             </p>
           </div>
-          
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Card 
-                key={product.id} 
+              <Card
+                key={product.id}
                 className="group hover:shadow-card-hover transition-all duration-300 overflow-hidden cursor-pointer"
                 onClick={() => navigate(`/products/${product.id}`)}
               >
                 <CardHeader className="pb-2">
                   <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden relative">
                     {product.image_url ? (
-                      <img 
-                        src={product.image_url} 
+                      <img
+                        src={product.image_url}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
@@ -560,7 +569,7 @@ export default function Products() {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 mb-4">
                     {product.profiles?.college && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -574,7 +583,7 @@ export default function Products() {
                   </div>
 
                   {product.seller_phone && product.user_id !== user?.id && (
-                    <a 
+                    <a
                       href={`tel:${product.seller_phone}`}
                       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
                       onClick={(e) => e.stopPropagation()}
@@ -622,7 +631,7 @@ export default function Products() {
                               <XCircle className="w-4 h-4 mr-2" />
                               Mark as Unavailable
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteProduct(product.id);

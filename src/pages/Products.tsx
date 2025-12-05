@@ -9,13 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductCard } from '@/components/ProductCard';
 import { CategoryBar } from '@/components/CategoryBar';
 import { PromoBanner, TrendingBanner } from '@/components/PromoBanner';
-import { 
-  Search, 
-  Package, 
-  Plus, 
-  Filter, 
-  School, 
-  X, 
+import {
+  Search,
+  Package,
+  Plus,
+  Filter,
+  School,
+  X,
   SlidersHorizontal,
   Grid3X3,
   LayoutGrid,
@@ -223,7 +223,7 @@ export default function Products() {
 
   const filteredProducts = products
     .filter(product => {
-      const matchesSearch = 
+      const matchesSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.category?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -271,7 +271,7 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       {/* Category Bar */}
-      <CategoryBar 
+      <CategoryBar
         selectedCategory={selectedCategory || undefined}
         onCategorySelect={handleCategorySelect}
       />
@@ -290,7 +290,7 @@ export default function Products() {
               }
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button asChild className="bg-gradient-primary hover:opacity-90">
               <Link to="/add-product">
@@ -317,7 +317,11 @@ export default function Products() {
               <Input
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  localStorage.setItem("lastSearch", value);
+                }}
                 className="pl-10 h-11 bg-muted/50"
               />
             </div>
@@ -411,8 +415,8 @@ export default function Products() {
               {searchQuery && (
                 <Badge variant="secondary" className="gap-1">
                   Search: {searchQuery}
-                  <X 
-                    className="w-3 h-3 cursor-pointer" 
+                  <X
+                    className="w-3 h-3 cursor-pointer"
                     onClick={() => setSearchQuery('')}
                   />
                 </Badge>
@@ -420,8 +424,8 @@ export default function Products() {
               {filterByCampus && (
                 <Badge variant="secondary" className="gap-1">
                   My Campus
-                  <X 
-                    className="w-3 h-3 cursor-pointer" 
+                  <X
+                    className="w-3 h-3 cursor-pointer"
                     onClick={() => setFilterByCampus(false)}
                   />
                 </Badge>
@@ -429,15 +433,15 @@ export default function Products() {
               {selectedCategory && (
                 <Badge variant="secondary" className="gap-1">
                   {selectedCategory}
-                  <X 
-                    className="w-3 h-3 cursor-pointer" 
+                  <X
+                    className="w-3 h-3 cursor-pointer"
                     onClick={() => setSelectedCategory(null)}
                   />
                 </Badge>
               )}
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setSearchQuery('');
                   setFilterByCampus(false);
@@ -481,14 +485,13 @@ export default function Products() {
             </Button>
           </div>
         ) : (
-          <div className={`grid gap-4 ${
-            gridCols === 'compact' 
-              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6' 
+          <div className={`grid gap-4 ${gridCols === 'compact'
+              ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
               : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-          }`}>
+            }`}>
             {filteredProducts.map((product, index) => (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
